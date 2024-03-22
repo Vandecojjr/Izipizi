@@ -1,0 +1,201 @@
+﻿
+@using System.Globalization
+@attribute [StreamRendering]
+@inject IProdutoServices ProdutoServices
+@inject NavigationManager NavigationManager
+@inject ISnackbar Snackbar
+@inject IUsuarioServices UsuarioServices
+@inject IJSRuntime JSRuntime
+
+
+@using Microsoft.AspNetCore.Authorization
+@using System.Security.Claims
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+@rendermode InteractiveServer
+<PageTitle>Produtos</PageTitle>
+
+@if (carregando)
+{
+    <MudProgressLinear Color="Color.Info" Indeterminate="true"/>
+}
+else
+{
+
+<ModalDeConfirmacao @ref="confirmacaoDeDelete" 
+    Titulo="Confirmação de exclusão."
+    onCancela="()=> CancelaModalDeDelete()"
+    onConfirma="() => DeletarProduto(removerProduto)">
+    <h5>Deseja deletar o produto <span class="text-danger">@nomeDoProduto</span>?</h5>
+</ModalDeConfirmacao>
+
+
+<AuthorizeView Roles="EasyAdmin,Admin,cadastro/alteracao">
+    <Authorized>
+        <div class="py-3">
+<MudButton Href="novoProduto"
+           Variant="Variant.Text"
+           EndIcon="@Icons.Material.Filled.Add"
+           Color="Color.Success">
+    Novo produto
+</MudButton>
+                @if (baixando)
+                {
+                    <MudProgressCircular Class="mb-1 ms-1" Color="Color.Info" Size="Size.Small" Indeterminate="true" />
+                }
+                else
+                {
+                <MudButton OnClick="() => Relatorio()"
+                    Class="mx-2"
+                Variant="Variant.Text"
+                EndIcon="@Icons.Material.Filled.FileDownload"
+                Color="Color.Info">
+        Relatorio
+        </MudButton>
+                }
+            </div>
+    </Authorized>
+</AuthorizeView>
+
+    <MudDataGrid T="Produto" Filterable="true" Hideable="true" Items="@produtos" QuickFilter="@_quickFilter" >
+        <ToolBarContent>
+            <MudText Typo="Typo.h6">Produtos</MudText>
+            <MudSpacer />
+            <MudTextField @bind-Value="_searchString" Placeholder="Buscar" Adornment="Adornment.Start" Immediate="true"
+                          AdornmentIcon="@Icons.Material.Filled.Search"  Class="mt-0"></MudTextField>
+        </ToolBarContent>
+        <Columns>
+            <PropertyColumn Property="x => x.Codigo" Title="Codigo" Sortable="false" Filterable="false" />
+            <PropertyColumn Property="x => x.Nome"   Sortable="false" Filterable="false" />
+            <PropertyColumn Property="x => x.NomeDaCategoria" Title="Categoria"  Sortable="false" Filterable="false" />
+            <PropertyColumn Property="x => x.Quantidade" Sortable="false" Filterable="false" CellStyleFunc="@_cellStyleFunc" />
+            <PropertyColumn Property="x => x.Valor" Title="Preço de venda" Sortable="false" Filterable="false" Format="C" />
+            <PropertyColumn Property="x => x.ValorDeCusto" Title="Preço de custo" Sortable="false" Filterable="false" Format="C" />
+            <PropertyColumn Property="x => x.MargemLucro" Title="% de lucro" Sortable="false" Filterable="false" Format="P" />
+            <TemplateColumn Filterable="false" Sortable="false" Title="Ativo/Não Ativo">
+                <CellTemplate>
+                    @if (context.Item.IsActive)
+                    {
+                        <MudIcon Icon="@Icons.Material.Filled.CheckCircleOutline" Color="Color.Success" Title="Ativo" />
+                    }
+                    else
+                    {
+                        <MudIcon Icon="@Icons.Material.Filled.Block" Color="Color.Error" Title="Inativo"/>
+                    }
+                </CellTemplate>
+            </TemplateColumn>
+            <TemplateColumn Filterable="false" Sortable="false" CellClass="d-flex justify-end">
+                    <CellTemplate>
+                        @if (userRoles.Contains("EasyAdmin") || userRoles.Contains("Admin") || userRoles.Contains("cadastro/alteracao"))
+                        {
+                            <MudIconButton  Color="Color.Info" Icon="@Icons.Material.Outlined.Edit" OnClick="@(() => NavigationManager.NavigateTo($"/novoProduto{context.Item.Id}"))" />
+                             <MudIconButton Color="Color.Error" Icon="@Icons.Material.Outlined.Delete" OnClick="@(() => AbrirModalDeExclusao(context.Item.Id, context.Item.Nome))" />
+                        }
+                        else
+                        {
+                            <MudIconButton Disabled="true" Color="Color.Info" Icon="@Icons.Material.Outlined.Edit" OnClick="@(() => NavigationManager.NavigateTo($"/novoProduto{context.Item.Id}"))" />
+                            <MudIconButton Disabled="true" Color="Color.Error" Icon="@Icons.Material.Outlined.Delete" OnClick="@(() => AbrirModalDeExclusao(context.Item.Id, context.Item.Nome))" />
+                        }
+                    </CellTemplate>
+                </TemplateColumn>
+        </Columns>
+    </MudDataGrid>
+}
+@code {
+    public bool carregando = true;
+    public bool baixando = false;
+    private List<string> userRoles = new List<string>();
+    private List<Produto> produtos = new List<Produto>();
+    private string _searchString;
+    ModalDeConfirmacao confirmacaoDeDelete;
+    private Guid removerProduto { get; set; }
+    private string nomeDoProduto { get; set; }
+
+
+    protected override async Task OnInitializedAsync() 
+    {
+        carregando = true;
+        produtos = await ProdutoServices.GetAllProdutosAsync();
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        bool usuarioAtivo = await UsuarioServices.GetUsuarioAtivo();
+        if (!usuarioAtivo) NavigationManager.NavigateTo("/pagamento");
+
+        if (user != null && user.Identity != null && user.Identity.IsAuthenticated)
+        {
+            if (user.Identity is ClaimsIdentity claimsIdentity)
+            {
+                var roleClaims = claimsIdentity.FindAll(ClaimTypes.Role);
+                userRoles = roleClaims.Select(c => c.Value).ToList();
+            }
+        }
+        carregando = false;
+    }
+
+    void AbrirModalDeExclusao(Guid id, string nome)
+    {
+        confirmacaoDeDelete.Exibir();
+        removerProduto = id;
+        nomeDoProduto = nome;
+    }
+
+    void CancelaModalDeDelete() => confirmacaoDeDelete.Ocultar();
+
+    async Task DeletarProduto(Guid id) 
+    {
+
+        await ProdutoServices.DeleteProdutoAsync((Guid)id);
+        produtos = await ProdutoServices.GetAllProdutosAsync();
+        StateHasChanged();
+        confirmacaoDeDelete.Ocultar();
+
+
+    }
+
+    private Func<Produto, string> _cellStyleFunc => x =>
+    {
+        string style = "";
+        if (x.Quantidade < 0)
+        {
+            style += "color:red;";
+        }  
+        return style;
+    };
+
+    private Func<Produto, bool> _quickFilter => x =>
+     {
+         if (string.IsNullOrWhiteSpace(_searchString))
+             return true;
+
+         if (x.Codigo.ToString().Contains(_searchString, StringComparison.OrdinalIgnoreCase))
+             return true;
+
+         if (x.Nome.Contains(_searchString, StringComparison.OrdinalIgnoreCase))
+             return true;
+
+         if (x.NomeDaCategoria.Contains(_searchString, StringComparison.OrdinalIgnoreCase))
+             return true;
+
+         if ($"{x.Codigo} {x.Nome} {x.NomeDaCategoria} ".Contains(_searchString))
+             return true;
+
+         return false;
+     };
+
+    public async Task Relatorio()
+    {
+        baixando = true;
+        byte[] bytesDoRelatorio = await ProdutoServices.GerarRelatorio(produtos);
+        string nomeDoArquivo = "relatorio.pdf";
+
+        // Tipo de arquivo para indicar ao navegador que é um PDF
+        string tipoDoArquivo = "application/pdf";
+
+        // Criar o stream de bytes para o arquivo
+        await JSRuntime.InvokeAsync<object>("saveAsFile", nomeDoArquivo, bytesDoRelatorio, tipoDoArquivo);
+        baixando = false;
+    }
+}
+
+

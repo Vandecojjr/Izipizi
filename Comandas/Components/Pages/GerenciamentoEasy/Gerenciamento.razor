@@ -1,0 +1,418 @@
+﻿@page "/gerenciamento"
+@attribute [Authorize(Roles = "EasyAdmin")]
+@attribute [StreamRendering]
+@inject IUsuarioServices UsuarioServices
+@using Blazored.Toast.Configuration
+@using Blazored.Typeahead
+
+@inject IToastService toastService
+@rendermode InteractiveServer 
+
+
+<BlazoredToasts Position="ToastPosition.TopRight"
+                Timeout="5"
+                IconType="IconType.Material"
+                InfoIcon="school"
+                WarningIcon="warning" />
+
+
+@if (carregando)
+{
+    <MudProgressLinear Color="Color.Info" Indeterminate="true"/>
+}
+else
+{
+<MudContainer Class="mt-2" MaxWidth="MaxWidth.False">
+    <MudGrid>
+        <MudItem sm="12" xs="12" xl="4" md="12">
+            <MudPaper Elevation="2" Class="pa-4">
+                <h5>Total de Empresas Ativas.</h5>
+                <h6>@totalDeEmpresas</h6>
+            </MudPaper>
+        </MudItem>
+        <MudItem>
+            <MudPaper sm="12" xs="12" xl="4" md="12">
+                    <MudPaper Elevation="2" Class="pa-4">
+                        <h5>Total de Usuários Logados.</h5>
+                        <h6>@usuariosLogados</h6>
+                    </MudPaper>
+            </MudPaper>
+        </MudItem>
+        <MudItem sm="6" xs="12" xl="12" md="6">
+            <MudPaper Elevation="2" Class="pa-4">
+                <div>
+                    <label>Email</label>
+                    <InputText @bind-Value="usuario.Email" class="form-control"></InputText>
+                </div>
+                @if (atualizar)
+                {
+                    <div>
+                        <MudSwitch Color="Color.Success" @bind-Value="novaSenha" Label="Mudar Senha?"></MudSwitch>
+                    </div>
+                    @if (novaSenha)
+                    {
+                        <div>
+                            <label>Senha</label>
+                            <InputText type="password" @bind-Value="usuario.Senha" class="form-control"></InputText>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <div>
+                        <label>Senha</label>
+                        <InputText type="password" @bind-Value="usuario.Senha" class="form-control"></InputText>
+                    </div>
+                }
+                <div>
+                    <label>Empresa</label>
+                    <InputText @bind-Value="usuario.Empresa" class="form-control"></InputText>
+                </div>
+                <div>
+                    <label>Dia de vencimento</label>
+                    <InputNumber @bind-Value="usuario.DiaDeVencimento" class="form-control"></InputNumber>
+                </div>
+                <div>
+                    <label>Quantidade de usuários</label>
+                    <InputNumber @bind-Value="usuario.UsuariosAltorizados" class="form-control"></InputNumber>
+                </div>
+                <div>
+                    <label>Nivel administrativo</label>
+                    <InputSelect class="form-control" @bind-Value="usuario.NivelAdmin">
+                        <option selected>Selecione</option>
+                        <option value="0">EasyAdmin</option>
+                        <option value="1">Empresário</option>
+                        <option value="2">Funcionário</option>
+                    </InputSelect>
+                </div>
+                <div>
+                    <MudSwitch @bind-Value="usuario.Ativo" Color="Color.Success" Label="Ativo"></MudSwitch>
+                </div>
+                <MudButton OnClick="() => CadastrarNovoUsuario()">Gravar</MudButton>
+            </MudPaper>
+        </MudItem>
+
+        <MudItem sm="12" xs="12" xl="12" md="12">
+            <MudPaper Elevation="2" Class="pa-4">
+                <MudTabs Elevation="0" Rounded="true" ApplyEffectsToContainer="false" SliderColor="Color.Dark">
+                    <MudTabPanel Style="color:#065A82;" Text="Usuários easy">
+                        <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th></th>
+                                    <th>Nome</th>
+                                    <th>Ativo</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var item in usuarios)
+                                {
+                                    @if (item.NivelAdmin == 0)
+                                    {
+                                        <tr>
+                                            <td>
+                                                <MudIconButton Size="Size.Small" Color="Color.Info" Icon="@Icons.Material.Outlined.Edit" OnClick="() => Atualizar(item.Id)" />
+                                            </td>
+                                            <td>@item.Email</td>
+                                            @if (item.Ativo == true)
+                                            {
+                                                <td><MudIcon Icon="@Icons.Material.Filled.CheckCircleOutline" Color="Color.Success" Title="Ativo" /></td>
+                                            }
+                                            else
+                                            {
+                                                <td><MudIcon Icon="@Icons.Material.Filled.Block" Color="Color.Error" Title="Inativo" /></td>
+                                            }
+                                        </tr>
+                                    }
+                                }
+                            </tbody>
+                        </table>
+                        </div>
+                    </MudTabPanel>
+                    <MudTabPanel Style="color:#065A82;" Text="Todos os usuários">
+                        <div class="table-responsive">
+                            <table class="table">
+                            <thead>
+                                <tr>
+                                    <th></th>
+                                    <th>Nome</th>
+                                    <th>Empresa</th>
+                                    <th>Nivel Administrativo</th>
+                                    <th>Ativo</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var item in usuarios)
+                                {
+                                    <tr>
+                                        <td>
+                                            <MudIconButton Size="Size.Small" Color="Color.Info" Icon="@Icons.Material.Outlined.Edit" OnClick="() => Atualizar(item.Id)" />
+                                        </td>
+                                        <td>@item.Email</td>
+                                        <td>@item.Empresa</td>
+                                        @if(item.NivelAdmin == 0){<td>Easy Admin</td>}
+                                        else if(item.NivelAdmin == 1){<td>Empresário</td>}
+                                        else{<td>Funcionário</td>}
+
+                                        @if (item.Ativo == true)
+                                        {
+                                            <td><MudIcon Icon="@Icons.Material.Filled.CheckCircleOutline" Color="Color.Success" Title="Ativo" /></td>
+                                        }
+                                        else
+                                        {
+                                            <td><MudIcon Icon="@Icons.Material.Filled.Block" Color="Color.Error" Title="Inativo" /></td>
+                                        }
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                        </div>
+                    </MudTabPanel>
+                    <MudTabPanel Style="color:#065A82;" Text="Usuários empresários">
+                        <div class="table-responsive">
+                            <table class="table">
+                            <thead>
+                                <tr>
+                                    <th></th>
+                                    <th>Nome</th>
+                                    <th>Empresa</th>
+                                    <th>Adesão</th>
+                                    <th>Dia de vencimento</th>
+                                    <th>Ativo</th>
+                                    <th>Usuários permitidos</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var item in usuarios)
+                                {
+                                    @if (item.NivelAdmin == 1)
+                                    {
+                                        <tr>
+                                            <td>
+                                                <MudIconButton Size="Size.Small" Color="Color.Info" Icon="@Icons.Material.Outlined.Edit" OnClick="() => Atualizar(item.Id)" />
+                                            </td>
+                                            <td>@item.Email</td>
+                                            <td>@item.Empresa</td>
+                                            <td>@item.DataDaAdesao</td>
+                                            <td>@item.DiaDeVencimento</td>
+                                            @if (item.Ativo == true)
+                                            {
+                                                <td><MudIcon Icon="@Icons.Material.Filled.CheckCircleOutline" Color="Color.Success" Title="Ativo" /></td>
+                                            }
+                                            else
+                                            {
+                                                <td><MudIcon Icon="@Icons.Material.Filled.Block" Color="Color.Error" Title="Inativo" /></td>
+                                            }
+                                            <td>@item.UsuariosAltorizados</td>
+                                        </tr>
+                                    }
+                                }
+                            </tbody>
+                        </table>
+                        </div>
+                    </MudTabPanel>
+                    <MudTabPanel Style="color:#065A82;" Text="Usuários funcionários">
+                        <div class="table-responsive">
+                            <table class="table">
+                            <thead>
+                                <tr>
+                                    <th></th>
+                                    <th>Nome</th>
+                                    <th>Empresa</th>
+                                    <th>Ativo</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var item in usuarios)
+                                {
+                                    @if (item.NivelAdmin == 2)
+                                    {
+                                        <tr>
+                                            <td>
+                                                <MudIconButton Size="Size.Small" Color="Color.Info" Icon="@Icons.Material.Outlined.Edit" OnClick="() => Atualizar(item.Id)" />
+                                            </td>
+                                            <td>@item.Email</td>
+                                            <td>@item.Empresa</td>
+                                            @if (item.Ativo == true)
+                                            {
+                                                <td><MudIcon Icon="@Icons.Material.Filled.CheckCircleOutline" Color="Color.Success" Title="Ativo" /></td>
+                                            }
+                                            else
+                                            {
+                                                <td><MudIcon Icon="@Icons.Material.Filled.Block" Color="Color.Error" Title="Inativo" /></td>
+                                            }
+                                        </tr>
+                                    }
+                                }
+                            </tbody>
+                        </table>
+                        </div>
+                    </MudTabPanel>
+                </MudTabs>
+            </MudPaper>
+        </MudItem>
+
+        <MudItem sm="12" xs="12" xl="12" md="12">
+            <MudPaper Elevation="2" Class="pa-4">
+                <MudExpansionPanels Elevation="0">
+                   @foreach (var item in usuarios)
+                    {
+                        <MudExpansionPanel Text="@item.Email" > 
+                            @foreach (var perfil in item.PerfisDesteUser)
+                            {
+                            <MudPaper Elevation="0" Class="d-flex">
+                                    <h7 class="mt-4" style="color:#1B3B6F;">@perfil.Nome</h7>
+                                    <MudIconButton Color="Color.Error" Icon="@Icons.Material.Outlined.Delete" OnClick="() => RemoverPerfilDoUsuario(perfil.Nome,item.Id)" />
+                            </MudPaper>
+                            }
+                        </MudExpansionPanel>
+                    }
+                </MudExpansionPanels>
+            </MudPaper>
+        </MudItem>
+    
+        <MudItem sm="6" xs="12" xl="12" md="6">
+            <MudPaper Elevation="2" Class="pa-4">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Perfis de usuário</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in perfis)
+                        {
+                            <tr>
+                                <td>@item.Nome</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </MudPaper>
+        </MudItem>
+
+        @* <MudItem sm="6" xl="12" md="6">
+            <MudPaper Elevation="2" Class="pa-4">
+                <InputText @bind-Value="novoPerfil" class="form-control"></InputText>
+                <MudButton OnClick="() => GravarPerfil()">Gravar</MudButton>
+            </MudPaper>
+        </MudItem> *@
+
+        <MudItem sm="6" xs="12" xl="12" md="6">
+            <MudPaper Elevation="2" Class="pa-4">
+                <h5>Atribuir perfil ao usuario.</h5>
+                <div class="py-2">
+                <InputSelect class="form-control" @bind-Value="usuarioId">
+                        <option selected>Selecione um usuário</option>
+                    @foreach (var item in usuarios)
+                    {
+                        <option value="@item.Id">@item.Email</option>
+                    }
+                </InputSelect>
+                </div>
+                <div class="py-2">
+                <InputSelect class="form-control" @bind-Value="novoPerfilUsuario">
+                        <option selected>Selecione um perfil.</option>
+                    @foreach (var item in perfis)
+                    {
+                        <option value="@item.Nome">@item.Nome</option>
+                    }
+                </InputSelect>
+                </div>
+                <MudButton OnClick="() => GravarPerfilDoUsuario()">Gravar</MudButton>
+            </MudPaper>
+        </MudItem>
+
+        
+    </MudGrid>
+</MudContainer>
+}
+
+
+@code {
+    public bool carregando = true;
+
+    List<Usuario> usuarios = new List<Usuario>();
+    List<PerfilUsuario> perfis = new List<PerfilUsuario>();
+
+    public string novoPerfil { get; set; }
+    public string novoPerfilUsuario { get; set; }
+    public string usuarioId { get; set; }
+    public bool atualizar = false;
+    public bool novaSenha = false;
+    public int usuariosLogados = 0;
+    Usuario usuario = new();
+
+    public int totalDeEmpresas = 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        carregando = true;
+        await AtualizaInfo();
+        foreach (var item in usuarios)
+        { 
+            if (item.NivelAdmin == 1 && item.Ativo) totalDeEmpresas += 1;
+            if (item.Logado) { usuariosLogados += 1; }
+        }
+        carregando = false;
+    }
+
+    public async Task AtualizaInfo()
+    {
+        usuarios = await UsuarioServices.GetUsuarios();
+        perfis = await UsuarioServices.GetPerfils();
+        StateHasChanged();
+    }
+
+    public async Task GravarPerfil()
+    {
+        await UsuarioServices.AddPerfil(novoPerfil);
+        await AtualizaInfo();
+    }
+
+    public async Task GravarPerfilDoUsuario()
+    {
+        await UsuarioServices.AtualizarPerfilUsuario(usuarioId, novoPerfilUsuario);
+        await AtualizaInfo();
+    }
+
+    public async Task RemoverPerfilDoUsuario(string nomePerfil, string idUsuario)
+    {
+        await UsuarioServices.DeletePerfilDoUsuario(nomePerfil, idUsuario);
+        await AtualizaInfo();
+    }
+
+    public async Task Atualizar(string Id)
+    {
+        usuario = await UsuarioServices.GetUsuario(Id);
+        atualizar = true;
+    }
+
+    public async Task CadastrarNovoUsuario()
+    {
+
+        if (usuario.Email == null || usuario.Empresa == null || usuario.DiaDeVencimento == null)
+        {
+            toastService.ShowError("Por favor preencha todos os campos");
+        }
+        else
+        {
+            if (atualizar)
+            {
+                await UsuarioServices.AtualizarUsuario(usuario, novaSenha);
+            }
+            else
+            {
+                await UsuarioServices.AddUsuário(usuario);
+            }
+
+            await AtualizaInfo();
+            usuario = new();
+            novaSenha = false;
+            atualizar = false;
+        }
+        
+    }
+
+}

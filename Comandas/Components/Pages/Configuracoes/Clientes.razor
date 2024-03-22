@@ -1,0 +1,342 @@
+﻿@rendermode InteractiveServer
+@attribute [StreamRendering]
+@inject IClienteServices ClienteServices
+@inject IProdutoVendidoServices ProdutoVendidoServices
+@inject IFormaDePagamentoServices FormaDePagamentoServices
+@inject IVendaServices Vendaservises
+@inject IToastService toastService
+@inject IJSRuntime JSRuntime
+@inject NavigationManager NavigationManager
+@inject IUsuarioServices UsuarioServices
+@using Blazored.Toast.Configuration
+@using Blazored.Typeahead
+
+
+
+<BlazoredToasts Position="ToastPosition.TopRight"
+                Timeout="5"
+                IconType="IconType.Material"
+                InfoIcon="school"
+                WarningIcon="warning" />
+
+@if (carregando)
+{
+    <MudProgressLinear Color="Color.Info" Indeterminate="true"/>
+}
+else
+{
+
+@if (modalTransacoes)
+{
+    <div class="modal-backdrop show"></div>
+    <div class="modal" tabindex="-1" role="dialog"
+         arial-hidden="true" style="display:block;">
+        <div class="modal-dialog modal-dialog-centered modal-xl" role="document">
+            <div class="modal-content">
+      
+                <MudDataGrid T="Venda" Filterable="true" Hideable="true" Items="@vendas">
+                    <Columns>
+                        <PropertyColumn Property="x => x.Numero" Title="N° da venda" Sortable="false" Filterable="false" />
+                        <PropertyColumn Property="x => x.Total" Sortable="false" Filterable="false" Format="C" />
+                        <PropertyColumn Property="x => x.Descontos" Sortable="false" Filterable="false" Format="C" />
+                        <PropertyColumn Property="x => x.NomeDoUsuario" Title="Vendedor" Sortable="false" Filterable="false" />
+                        <PropertyColumn Property="x => x.NomeDoCliente" Title="Cliente" Sortable="false" Filterable="false" />
+                        <PropertyColumn Property="x => x.DataDaVenda" Title="Data" Filterable="false" />
+                        <TemplateColumn Filterable="false" Sortable="false" CellClass="d-flex justify-end">
+                            <CellTemplate>
+                                <MudIconButton OnClick="() => CarregarConteudoModal(context.Item)" Color="Color.Info" Icon="@Icons.Material.Outlined.RemoveRedEye" />
+                            </CellTemplate>
+                        </TemplateColumn>
+                    </Columns>
+                </MudDataGrid>
+                <MudButton OnClick="AbrirOuFecharModal1" Color="Color.Info" Variant="Variant.Filled">OK</MudButton>
+                    @if (baixando)
+                    {
+                        <MudProgressCircular Class="mb-1 ms-1" Color="Color.Info" Size="Size.Small" Indeterminate="true" />
+                    }
+                    else
+                    {
+                        <MudIconButton OnClick="ImprimirRelatorioCliente" Color="Color.Info" Icon="@Icons.Material.Filled.FileDownload" aria-label="Bixar transações"></MudIconButton>
+                    }
+            </div>
+        </div>
+    </div>
+}
+
+@if (modalTransacoes2)
+{
+    <div class="modal-backdrop show"></div>
+    <div class="modal" tabindex="-1" role="dialog"
+         arial-hidden="true" style="display:block;">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content pa-2">
+                <MudPaper Elevation="0" Style="background:#B3E5FC;" Class="d-flex my-2">
+                    <MudSpacer />
+                    <h6>Qtd</h6>
+                    <MudSpacer />
+                    <h6>Nome</h6>
+                    <MudSpacer />
+                    <h6>desconto</h6>
+                    <MudSpacer />
+                </MudPaper>
+                @foreach (var item in produtosVendidos)
+                {
+                    <MudPaper Class="d-flex my-1">
+                        <MudSpacer />
+                        <h6>@item.Quantidade</h6>
+                        <MudSpacer />
+                        <h6>@item.Nome</h6>
+                        <MudSpacer />
+                        <h6>@item.Desconto</h6>
+                        <MudSpacer />
+                    </MudPaper>
+                }
+                <h6>Formas de pagamento</h6>
+                <MudPaper Elevation="0" Style="background:#B3E5FC;" Class="d-flex my-2">
+                    <MudSpacer />
+                    <h6>Nome</h6>
+                    <MudSpacer />
+                    <h6>Valor</h6>
+                    <MudSpacer />
+                </MudPaper>
+                @foreach (var item in formasDePagamento)
+                {
+                    <MudPaper Class="d-flex my-1">
+                        <MudSpacer />
+                        <h6>@item.NomeDoMetodo</h6>
+                        <MudSpacer />
+                        <h6>@item.Valor</h6>
+                        <MudSpacer />
+                    </MudPaper>
+                }
+                <MudButton OnClick="AbrirOuFecharModal" Variant="Variant.Filled">Cancelar</MudButton>
+            </div>
+        </div>
+    </div>
+}
+
+@if (modal)
+{
+    <div class="modal-backdrop show"></div>
+    <div class="modal" tabindex="-1" role="dialog"
+         arial-hidden="true" style="display:block;">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    @if (cadastrar)
+                    {
+                        <h5>Cadastrar Usuário</h5>
+                    }
+                    else if(editar)
+                    {
+                        <h5>Editar Usuário</h5>
+                    }
+                    else
+                    {
+                        <h3>Deletar este Usuário?</h3>
+                    }
+                </div>
+                @if (deletar)
+                {
+                    <div class="modal-body">
+                        <h2>Você tem certeza?</h2>
+                    </div>
+                    <div class="modal-footer">
+                        <MudButton OnClick="AcaoModal" Class="mx-3" ButtonType="ButtonType.Submit" Variant="Variant.Filled"  Color="Color.Error">Aplicar</MudButton>
+                        <MudButton OnClick="FecharModal" Variant="Variant.Filled">Cancelar</MudButton>
+                    </div>
+                }
+                else
+                {
+                    <EditForm Model="cliente" OnSubmit="AcaoModal">
+                        <div class="modal-body">
+                            <div>
+                                <label>Nome</label>
+                                <InputText class="form-control" @bind-Value="cliente.Nome"></InputText>
+                            </div>
+                            <div>
+                                <label>Telefone</label>
+                                <InputText class="form-control" @bind-Value="cliente.Telefone"></InputText>
+                            </div>
+                            <div>
+                                <label>CPF</label>
+                                <InputText class="form-control" @bind-Value="cliente.CPF"></InputText>
+                            </div>
+                            <div>
+                                <label>Rua</label>
+                                <InputText class="form-control" @bind-Value="cliente.Rua"></InputText>
+                            </div>
+                            <div>
+                                <label>N°</label>
+                                <InputNumber class="form-control" @bind-Value="cliente.Numero"></InputNumber>
+                            </div>
+                            <div>
+                                <label>Limite</label>
+                                <InputNumber class="form-control" @bind-Value="cliente.Limite"></InputNumber>
+                            </div>
+
+                        </div>
+                        <div class="modal-footer">
+                            <MudButton Class="mx-3" ButtonType="ButtonType.Submit" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Delete" Color="Color.Error">Aplicar</MudButton>
+                            <MudButton OnClick="FecharModal" Variant="Variant.Filled">Cancelar</MudButton>
+                        </div>
+                    </EditForm>
+                }
+            </div>
+        </div>
+    </div>
+}
+    <MudContainer Class="mt-2" MaxWidth="MaxWidth.False">
+        <MudGrid>
+            <MudItem sm="12" xs="12" xl="12" md="12">
+                <MudPaper Elevation="2" Class="pa-4">
+                <MudDataGrid Elevation="0" T="Cliente" Filterable="true" Hideable="true" Items="@clientes">
+                    <Columns>
+                        <TemplateColumn Filterable="false" Sortable="false" CellClass="d-flex justify-end">
+                            <CellTemplate>
+                                <MudIconButton Size="Size.Small" Color="Color.Info" Icon="@Icons.Material.Outlined.RemoveRedEye" OnClick="() => CarregarConteudoModal1( context.Item.Id)" />
+                                <MudIconButton Size="Size.Small" Color="Color.Info" Icon="@Icons.Material.Outlined.Edit" OnClick="() => AbrirModal(false, false, true, context.Item.Id)" />
+                                <MudIconButton Size="Size.Small" Color="Color.Error" Icon="@Icons.Material.Outlined.Delete" OnClick="() => AbrirModal(true, false, false, context.Item.Id)" />
+                            </CellTemplate>
+                        </TemplateColumn>
+                        <PropertyColumn Property="x => x.Nome"  Sortable="false" Filterable="false" />
+                        <PropertyColumn Property="x => x.Telefone" Sortable="false" Filterable="false"  />
+                        <PropertyColumn Property="x => x.Limite" Title="Limite" Sortable="false" Filterable="false" Format="C" />
+                        <PropertyColumn Property="x => x.LimiteRestante" Title="Saldo" Format="C" Sortable="false" Filterable="false" />
+                        <PropertyColumn Property="x => x.CPF"  Sortable="false" Filterable="false" />
+                        <PropertyColumn Property="x => x.Rua"  Filterable="false" />
+                        <PropertyColumn Property="x => x.Numero"  Filterable="false" />
+                        <PropertyColumn Property="x => x.Estado"  Filterable="false" />
+                    </Columns>
+                </MudDataGrid>
+                    <MudButton OnClick="() => AbrirModal(false, true, false)" Variant="Variant.Filled">Novo Cliente</MudButton>
+                </MudPaper>
+            </MudItem>
+        </MudGrid>
+    </MudContainer>
+ }
+
+
+
+
+@code {
+    bool carregando = true;
+    bool baixando = false;
+    List<Cliente> clientes = new List<Cliente>();
+    private List<ProdutoVendido> produtosVendidos = new List<ProdutoVendido>();
+    private List<FormaDePagamento> formasDePagamento = new List<FormaDePagamento>();
+    private List<Venda> vendas = new List<Venda>();
+
+
+    Cliente cliente = new();
+    Cliente clienteRelatorio;
+    bool modal = false;
+    bool cadastrar = false;
+    bool editar = false;
+    bool deletar = false;
+    bool modalTransacoes = false;
+    bool modalTransacoes2 = false;
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        carregando = true;
+        clientes = await ClienteServices.ObterTodos();
+        vendas = await Vendaservises.GetAllVendasAsync();
+        carregando = false;
+        bool usuarioAtivo = await UsuarioServices.GetUsuarioAtivo();
+        if (!usuarioAtivo) NavigationManager.NavigateTo("/pagamento");
+
+    }
+
+    public async Task AbrirModal(bool delete,bool cad, bool edit, Guid Id = default)
+    {
+        cliente = await ClienteServices.GetCliente(Id);
+        if (cad)
+        {
+            cliente = new();
+            cadastrar = true;
+            editar = false;
+            deletar = false;
+
+        }
+        else if (edit)
+        {
+            cadastrar = false;
+            deletar = false;
+            editar = true;
+        }
+        else
+        {
+            deletar = true;
+            cadastrar = false;
+            editar = false;
+        }
+        modal = true;
+    }
+    public void FecharModal()
+    {
+        modal = false;
+        cadastrar = false;
+    }
+
+    public async Task AcaoModal()
+    {
+        if (cliente.Nome != null)
+        {
+            if (editar)
+            {
+                await ClienteServices.AtualizarCliente(cliente);
+            }
+            else if (cadastrar)
+            {
+                await ClienteServices.AddCliente(cliente);
+            }
+            else
+            {
+                await ClienteServices.DeleteCliente(cliente);
+            }
+            clientes = await ClienteServices.ObterTodos();
+            FecharModal();
+             cadastrar = false;
+             editar = false;
+             deletar = false;
+            cliente = new();
+        }
+        else
+        {
+            toastService.ShowError("O campo nome não pode ser vazio");
+        }
+
+    }
+    private void AbrirOuFecharModal() => modalTransacoes2 = !modalTransacoes2;
+    private void AbrirOuFecharModal1() => modalTransacoes = !modalTransacoes;
+
+    private void CarregarConteudoModal1(Guid id)
+    {
+        clienteRelatorio = clientes.FirstOrDefault(x => x.Id == id); 
+        vendas = vendas.Where(x => x.IdCliente == id && x.IsPrazo == true && x.IsPago == false).ToList();
+        AbrirOuFecharModal1();
+    }
+
+    private async Task CarregarConteudoModal(Venda venda)
+    {
+        produtosVendidos = await ProdutoVendidoServices.GetProdutosVendidosAsync(venda);
+        formasDePagamento = await FormaDePagamentoServices.GetFormaDePagamentos(venda);
+        AbrirOuFecharModal();
+    }
+    public async Task ImprimirRelatorioCliente()
+    {
+        var faltaReceber = clienteRelatorio.Limite - clienteRelatorio.LimiteRestante;
+        baixando = true;
+        byte[] bytesDoRelatorio = await ClienteServices.GerarRelatorioCliente(vendas, (decimal)faltaReceber);
+        string nomeDoArquivo = "Pagamento.pdf";
+
+        // Tipo de arquivo para indicar ao navegador que é um PDF
+        string tipoDoArquivo = "application/pdf";
+
+        // Criar o stream de bytes para o arquivo
+        await JSRuntime.InvokeAsync<object>("saveAsFile", nomeDoArquivo, bytesDoRelatorio, tipoDoArquivo);
+        baixando = false;
+    }
+}

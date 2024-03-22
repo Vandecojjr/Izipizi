@@ -1,0 +1,80 @@
+﻿@inject IProdutoServices ProdutoServices
+@inject NavigationManager NavigationManager
+@inject IUsuarioServices UsuarioServices
+@rendermode InteractiveServer
+@attribute [StreamRendering]
+@if (carregando)
+{
+    <MudProgressLinear Color="Color.Info" Indeterminate="true"/>
+}
+else
+{
+
+<MudTimeline>
+    <MudTimelineItem Color="Color.Dark" Size="Size.Small">
+
+        <ItemOpposite>
+            <MudText Color="Color.Dark" Typo="Typo.h5">Data</MudText>
+            </ItemOpposite>
+            <ItemContent>
+            <MudGrid>
+                <MudItem sm="3" xl="3" md="3">
+                    <MudText Color="Color.Info" Typo="Typo.h6" GutterBottom="false">Tag</MudText>
+                    </MudItem>
+                    <MudItem sm="3" xl="3" md="3">
+                        <MudText Color="Color.Info" Typo="Typo.h6" GutterBottom="false">Produto</MudText>
+                    </MudItem>
+                    <MudItem sm="3" xl="3" md="3">
+                        <MudText Color="Color.Info" Typo="Typo.h6" GutterBottom="false">Custo</MudText>
+                    </MudItem>
+                    <MudItem sm="3" xl="3" md="3">
+                        <MudText Color="Color.Info" Typo="Typo.h6" GutterBottom="false">Quantidade</MudText>
+                    </MudItem>
+                </MudGrid>
+            </ItemContent>
+        </MudTimelineItem>
+</MudTimeline>
+
+@foreach (var log in logs)
+{
+    
+        <MudTimeline>
+        <MudTimelineItem Color="Color.Dark" Size="Size.Small">
+            <ItemOpposite>
+                <MudText Color="Color.Dark" Typo="Typo.h5">@log.Data.ToString("dd/MM/yyyy")</MudText>
+                </ItemOpposite>
+                <ItemContent>
+                    <MudGrid>
+                        <MudItem sm="3" xl="3" md="3">
+                            <MudText Color="Color.Info" Typo="Typo.h6" GutterBottom="false">@log.Tag</MudText>
+                        </MudItem>
+                        <MudItem sm="3" xl="3" md="3">
+                            <MudText Color="Color.Info" Typo="Typo.h6" GutterBottom="false">@log.NomeProduto</MudText>
+                        </MudItem>
+                        <MudItem sm="3" xl="3" md="3">
+                            <MudText Color="Color.Info" Typo="Typo.h6" GutterBottom="false">@log.Custo</MudText>
+                        </MudItem>
+                        <MudItem sm="3" xl="3" md="3">
+                            <MudText Color="Color.Info" Typo="Typo.h6" GutterBottom="false">@log.Quantidade</MudText>
+                        </MudItem>
+                    </MudGrid>
+                </ItemContent>
+            </MudTimelineItem>
+
+        </MudTimeline>
+}
+}
+@code {
+    public bool carregando = true;
+    List<LogPrecoProduto> logs = new List<LogPrecoProduto>();
+    
+    protected override async Task OnInitializedAsync()
+    {
+        bool usuarioAtivo = await UsuarioServices.GetUsuarioAtivo();
+        if (!usuarioAtivo) NavigationManager.NavigateTo("/pagamento");
+        carregando = true;
+        logs = await ProdutoServices.GetAllLogs();
+        carregando = false;
+    }
+   
+}

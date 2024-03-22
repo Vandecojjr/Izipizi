@@ -1,0 +1,12 @@
+﻿@page "/venda"
+@attribute [Authorize(Roles = "EasyAdmin, Admin, vendas")]
+@rendermode InteractiveServer
+
+<MudTabs Elevation="0" Rounded="true" ApplyEffectsToContainer="false" SliderColor="Color.Dark">
+    <MudTabPanel Style="color:#065A82;" Text="Nova Venda">
+        <LancarVenda></LancarVenda>
+    </MudTabPanel>
+    <MudTabPanel Style="color:#065A82;" Text="Vendas">
+        <VendasRealizadas></VendasRealizadas>
+    </MudTabPanel>
+</MudTabs>

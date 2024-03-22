@@ -1,0 +1,578 @@
+﻿@rendermode InteractiveServer
+@attribute [StreamRendering]
+@using System.Globalization
+@using Blazored.Toast.Configuration
+@using Blazored.Typeahead
+@using System.Threading.Tasks;
+@inject IToastService toastService
+@inject ICaixaServices CaixaServices
+@inject ITransacaoServices TransacaoServices
+@inject IMetodoDePagamentoServices MetodoDePagamentoServices
+@inject IUsuarioServices UsuarioServices
+@inject IClienteServices ClientesServices
+@inject IVendaServices VendasServices
+@inject IJSRuntime JSRuntime
+@inject NavigationManager NavigationManager
+
+
+    <BlazoredToasts Position="ToastPosition.TopRight"
+                    Timeout="5"
+                    IconType="IconType.Material"
+                    InfoIcon="school"
+                    WarningIcon="warning" />
+
+
+
+    @if (modalAbertoFechamento)
+    {
+        <div class="modal-backdrop show"></div>
+        <div class="modal" tabindex="-1" role="dialog"
+             arial-hidden="true" style="display:block;">
+            <div class="modal-dialog modal-dialog-centered" role="document">
+                <div class="modal-content">
+                    @if (vendaFechada)
+                    {
+                        <MudPaper Elevation="0" Class="pa-3">
+                            <h6 class="text-info">Apuração do sistema</h6>
+                            <table class="table pa-2">
+                                <thead>
+                                    <tr>
+                                        @foreach (var item in fechamentos)
+                                        {
+                                            <th>@item.NomeMetodo</th>
+                                        }
+                                        <th>Total</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        @foreach (var item in fechamentos)
+                                        {
+                                            <td>@(string.Format("{0:C}", item.ValorApurado))</td>
+                                        }
+                                        <th>@(string.Format("{0:C}", caixaAtual.Total))</th>
+                                    </tr>
+                                </tbody>
+                            </table>
+                            <h6 class="text-info">Valores informado pelo usuário</h6>
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        @foreach (var item in fechamentos)
+                                        {
+                                            <th>@item.NomeMetodo</th>
+                                        }
+                                        <th>Total</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        @foreach (var item in fechamentos)
+                                        {
+                                            <td>@(string.Format("{0:C}", item.ValorInformado))</td>
+                                        }
+                                        <th>@(string.Format("{0:C}", totalInformado))</th>
+                                    </tr>
+                                </tbody>
+                            </table>
+                            <h6 class="text-info">Diferença de Valores</h6>
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        @foreach (var item in fechamentos)
+                                        {
+                                            <th>@item.NomeMetodo</th>
+                                        }
+                                        <th>Total</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        @foreach (var item in fechamentos)
+                                        {
+                                            <td>@(string.Format("{0:C}", (item.ValorInformado - item.ValorApurado)))</td>
+                                        }
+                                        <th>@(string.Format("{0:C}", (totalInformado - caixaAtual.Total)))</th>
+                                    </tr>
+                                </tbody>
+                            </table>
+                            <MudButton OnClick="@(()=> NavigationManager.NavigateTo("/"))" Class="mx-3" Variant="Variant.Filled" Color="Color.Info">OK</MudButton>
+                            @if (baixando)
+                            {
+                                <MudProgressCircular Class="mb-1 ms-1" Color="Color.Info" Size="Size.Small" Indeterminate="true" />
+                            }
+                            else
+                            {
+                                <MudIconButton OnClick="ImprimirApuracao" Color="Color.Info" Icon="@Icons.Material.Filled.FileDownload" aria-label="Bixar apuração"></MudIconButton>
+                            }
+                        </MudPaper>
+                    }
+                    else
+                    {
+                        <div class="modal-header">
+                            <h6 class="modal-title">Fechamento do caixa</h6>
+                        </div>
+                        <div class="modal-body">
+                            @foreach (var item in fechamentos)
+                            {
+                                <label for="valor">Total em @item.NomeMetodo</label>
+                                <InputNumber @bind-Value="item.ValorInformado" class="form-control"></InputNumber>
+                            }
+                        </div>
+                        <div class="modal-footer">
+                            <MudButton OnClick="FecharCaixa" Class="mx-3" Variant="Variant.Filled" Color="Color.Error">Confirmar Fechamento</MudButton>
+                            <MudButton OnClick="AbrirOuFecharModalFechamento" Variant="Variant.Filled">Cancelar</MudButton>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    }
+
+
+@if (modalAPrazo2)
+{
+    <div class="modal-backdrop show"></div>
+    <div class="modal" tabindex="-1" role="dialog"
+         arial-hidden="true" style="display:block;">
+        <div class="modal-dialog modal-dialog-centered modal-xl" role="document">
+            <div class="modal-content">
+
+                <MudDataGrid T="Venda" Filterable="true" Hideable="true" Items="@vendas" Elevation="0">
+                    <Columns>
+                        <PropertyColumn Property="x => x.Numero" Title="N° da venda" Sortable="false" Filterable="false" />
+                        <PropertyColumn Property="x => x.Total" Sortable="false" Filterable="false" Format="C" />
+                        <PropertyColumn Property="x => x.Descontos" Sortable="false" Filterable="false" Format="C" />
+                        <PropertyColumn Property="x => x.NomeDoUsuario" Title="Vendedor" Sortable="false" Filterable="false" />
+                        <PropertyColumn Property="x => x.NomeDoCliente" Title="Cliente" Sortable="false" Filterable="false" />
+                        <PropertyColumn Property="x => x.DataDaVenda" Title="Data" Filterable="false" />
+                    </Columns>
+                </MudDataGrid>
+                <MudDivider/>
+                <div class="ps-3 pt-3">
+                    <h4>Total a Receber</h4>
+                    <h5>@(string.Format("{0:C}", (totalAreceber)))</h5>
+                </div>
+                <MudDivider />
+                <div class="pa-3" >
+                    <h5>Receber</h5>
+                    <InputNumber class="form-control" @bind-Value="NovaTransacao.Valor"></InputNumber>
+                </div>
+                <div class="pa-3">
+                    <label for="metodo">Metodo da transação</label>
+                    <InputSelect id="metodo" class="form-control" @bind-Value="NovaTransacao.MetodoId">
+                        @if (metodosDePagamento != null)
+                        {
+                            @foreach (var item in metodosDePagamento)
+                            {
+                                <option value="@item.Id">@item.Nome</option>
+                            }
+                        }
+                    </InputSelect>
+                </div>
+                <div class="d-flex justify-content-center mb-3">
+                    <MudButton OnClick="RealizarNovaTransacao" Class="mx-3" Color="Color.Success" Variant="Variant.Filled">Receber</MudButton>
+                    <MudButton OnClick="FecharModalAprazo2" Class="mx-3" Variant="Variant.Filled">Cancelar</MudButton>
+                    @if (baixando)
+                    {
+                        <MudProgressCircular Class="mb-1 ms-1" Color="Color.Info" Size="Size.Small" Indeterminate="true" />
+                    }
+                    else
+                    {
+                        <MudIconButton OnClick="ImprimirFechamentoDeConta" Class="ms-3" Color="Color.Info" Icon="@Icons.Material.Filled.FileDownload" aria-label="Bixar recibo"></MudIconButton>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@if (modalAPrazo)
+{
+    <div class="modal-backdrop show"></div>
+    <div class="modal" tabindex="-1" role="dialog"
+         arial-hidden="true" style="display:block;">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    Receber A Prazo
+                </div>
+                    <div class="modal-body">
+                        <label>Cliente</label>
+                        <InputSelect class="form-control" @bind-Value="clienteId">
+                            <option selected>Selecione um cliente</option>
+                            @foreach (var item in clientes)
+                            {
+                                <option value="@item.Id">@item.Nome</option>
+                            }
+                        </InputSelect>
+                    </div>
+                    <div class="modal-footer">
+                        <MudButton OnClick="AbrirAprazo2" Class="mx-3" Variant="Variant.Filled" Color="Color.Success">Proximo</MudButton>
+                        <MudButton OnClick="AbrirOuFecharModalAprazo" Variant="Variant.Filled">Cancelar</MudButton>
+                    </div>
+            </div>
+        </div>
+    </div>
+}
+
+    @if (modalAberto)
+    {
+        <div class="modal-backdrop show"></div>
+        <div class="modal" tabindex="-1" role="dialog"
+             arial-hidden="true" style="display:block;">
+            <div class="modal-dialog modal-dialog-centered" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        @if (caixaAtual == null)
+                        {
+                            <h6 class="modal-title">Abertura do caixa</h6>
+                        }
+                        else
+                        {
+                            <h6 class="modal-title">Nova transação</h6>
+                        }
+                    </div>
+                    <EditForm Model="NovaTransacao" OnValidSubmit="RealizarNovaTransacao">
+                        <div class="modal-body">
+                            @if (caixaAtual != null)
+                            {
+                                <label for="nome">Nome da transação</label>
+                                <InputText id="nome" @bind-Value="NovaTransacao.Nome" class="form-control"></InputText>
+                            }
+                            <label for="valor">Valor da transação</label>
+                            <InputNumber id="valor" @bind-Value="NovaTransacao.Valor" class="form-control"></InputNumber>
+                            <label for="metodo">Metodo da transação</label>
+                            <InputSelect id="metodo" class="form-control" @bind-Value="NovaTransacao.MetodoId">
+                                @if (metodosDePagamento != null)
+                                {
+                                    @foreach (var item in metodosDePagamento)
+                                    {
+                                        <option value="@item.Id">@item.Nome</option>
+                                    }
+                                }
+                            </InputSelect>
+
+                        </div>
+                        <div class="modal-footer">
+                            <MudButton ButtonType="ButtonType.Submit" Class="mx-3" Variant="Variant.Filled" Color="Color.Success">Realizar transação</MudButton>
+                            <MudButton OnClick="AbrirOuFecharModal" Variant="Variant.Filled">Cancelar</MudButton>
+                        </div>
+                    </EditForm>
+                </div>
+            </div>
+        </div>
+    }
+    @if (carregando)
+    {
+        <MudProgressLinear Color="Color.Info" Indeterminate="true"/>
+    }
+    else
+    {
+        @if (caixaAtual is not null)
+        {
+            <MudContainer Class="mt-8 px-2" MaxWidth="MaxWidth.False">
+                <MudGrid Class="mb-3">
+                    <MudItem xs="12" sm="6" md="4">
+                        <MudPaper Elevation="2" Class="pa-2" Style="height: 200px;">
+                            <MudPaper Elevation="0" Style="background:#ECEFF1;" Class="d-flex px-1 pt-1">
+                                <h3>Total</h3>
+                                <MudSpacer />
+                                <h4>@(string.Format("{0:C}", caixaAtual.Total))</h4>
+                            </MudPaper>
+                            <MudPaper Elevation="0" Class="d-flex px-1 pt-1 mb-1">
+                                <h5 class="text-danger">Saida</h5>
+                                <MudSpacer />
+                                <h5 class="text-danger">@(string.Format("{0:C}", caixaAtual.TotalDeSaida))</h5>
+                            </MudPaper>
+                            <MudPaper Elevation="0" Class="d-flex px-1 pt-1 mb-1">
+                                <h5 class="text-success">Entrada</h5>
+                                <MudSpacer />
+                                <h5 class="text-success">@(string.Format("{0:C}", caixaAtual.TotalDeEntrada))</h5>
+                            </MudPaper>
+                            <MudPaper Elevation="0" Class="d-flex px-1 pt-1 mb-1">
+                                <h5 Style="color:#065A82;">Abertura</h5>
+                                <MudSpacer />
+                                <h5 Style="color:#065A82;">@(string.Format("{0:C}", caixaAtual.Abertura))</h5>
+                            </MudPaper>
+                        </MudPaper>
+                    </MudItem>
+                    <MudItem xs="12" sm="12" md="12">
+                        <MudPaper Elevation="2" Class="pa-4 d-lg-flex">
+                            @foreach (var item in fechamentos)
+                            {
+                                <MudChip Color="Color.Dark">Total em  @item.NomeMetodo</MudChip>
+                                <MudChip Style="background:#065A82; color:white;">@(string.Format("{0:C}", item.ValorApurado))</MudChip>
+                            }
+                        </MudPaper>
+                    </MudItem>
+                    <MudItem xs="12" sm="12" md="12">
+                        <MudPaper Elevation="2" Class="pa-4 d-lg-flex ">
+                        <MudItem xs="12" lg="2">
+                                <MudButton OnClick="() => NovaTransacaoModal1(true)" Class="ma-1" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.ArrowCircleUp" Color="Color.Tertiary">Fechar Conta</MudButton>
+                             </MudItem>
+                        <MudItem xs="12" lg="2">
+                                <MudButton OnClick="() => NovaTransacaoModal(true)" Class="ma-1" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.ArrowCircleUp" Color="Color.Success">Nova Entrada</MudButton>
+                            </MudItem >
+                        <MudItem xs="12" lg="2">
+                                 <MudButton OnClick="() => NovaTransacaoModal(false)" Class="ma-1" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.ArrowCircleDown" Color="Color.Error">Nova Saida</MudButton>
+                             </MudItem>
+                        <MudItem xs="12" lg="2">
+                            <MudButton OnClick="AbrirOuFecharModalFechamento" Class="ma-1" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.LabelOff" Color="Color.Dark">Fechar Caixa</MudButton>
+                            </MudItem>
+                            <MudSpacer />
+                            <MudChip Style="background:#065A82; color:white;">Aberto em @caixaAtual.DataDeAbertura</MudChip>
+                            </MudPaper>
+                        </MudItem>
+                        <MudItem xs="12" sm="12" md="12">
+                            <MudDataGrid T="Transacao" Items="@transacoes">
+                                <ToolBarContent>
+                                    <MudText Typo="Typo.h6">Transações</MudText>
+                                </ToolBarContent>
+                                <Columns>
+                                    <PropertyColumn Property="x => x.Nome" Sortable="false" Title="Nome" Filterable="false" />
+                                    <PropertyColumn Property="x => x.Data" Title="Data" Sortable="false" Filterable="false" />
+                                    <PropertyColumn Property="x => x.UserNome" Title="Usuário" Sortable="false" Filterable="false" />
+                                    <TemplateColumn Filterable="false" Sortable="false" Title="Entrada/Saida">
+                                        <CellTemplate>
+                                            @if (context.Item.Tipo)
+                                        {
+                                            <MudIcon Icon="@Icons.Material.Filled.CompareArrows" Color="Color.Success" Title="Entrada"></MudIcon>
+                                        }
+                                        else
+                                        {
+                                            <MudIcon Icon="@Icons.Material.Filled.CompareArrows" Color="Color.Error" Title="Saida"></MudIcon>
+                                        }
+                                    </CellTemplate>
+                                </TemplateColumn>
+                                <PropertyColumn Property="x => x.MetodoNome" Title="Método" Sortable="false" Filterable="false" />
+                                <PropertyColumn Property="x => x.Valor" Title="Preço de venda" Sortable="false" Filterable="false" Format="C" />
+                            </Columns>
+                        </MudDataGrid>
+                    </MudItem>
+                </MudGrid>
+            </MudContainer>
+        }
+        else
+        {
+            <MudPaper Elevation="0" Class="d-flex justify-content-center my-3">
+                <MudButton OnClick="AbrirOuFecharModal" Class="ma-1 jus" Variant="Variant.Filled" Color="Color.Success">Abrir Caixa</MudButton>
+            </MudPaper>
+        }
+    }
+
+
+
+@code {
+    public bool carregando = true;
+    public bool baixando = false;
+    Caixa caixaAtual = null; 
+    Transacao NovaTransacao = new();
+    public bool modalAberto = false;
+    public bool modalAbertoFechamento = false;
+    public bool tipoDaTransacao { get; set; }
+    public bool vendaFechada = false;
+    public bool modalAPrazo = false;
+    public bool modalAPrazo2 = false;
+    public decimal totalInformado = 0;
+    public decimal totalAreceber = 0;
+    Guid clienteId { get; set; }
+
+    public List<Transacao> transacoes = new List<Transacao>();
+    public List<MetodoDePagamento> metodosDePagamento = new List<MetodoDePagamento>();
+    public List<MetodoDePagamento> metodosDePagamento2 = new List<MetodoDePagamento>();
+    public List<FechamentoCaixa> fechamentos = new List<FechamentoCaixa>();
+    public List<Venda> vendas = new List<Venda>();
+    public List<Cliente> clientes = new List<Cliente>();
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        carregando = true;
+        await AtualizaCaixa();
+        bool usuarioAtivo = await UsuarioServices.GetUsuarioAtivo();
+        if (!usuarioAtivo) NavigationManager.NavigateTo("/pagamento");
+        clientes = await ClientesServices.ObterTodos();
+        vendas = await VendasServices.GetAllVendasAsync();
+        clientes = clientes.Where(x => x.LimiteRestante < x.Limite).ToList();
+        carregando = false;
+    }
+
+    public void AbrirOuFecharModal() => modalAberto = !modalAberto;
+
+    public void AbrirOuFecharModalFechamento() => modalAbertoFechamento = !modalAbertoFechamento;
+
+    public async Task AtualizaCaixa()
+    {
+        caixaAtual = await CaixaServices.GetCaixaAberto();
+        metodosDePagamento = await MetodoDePagamentoServices.GetAllMetodosAsync();
+        metodosDePagamento2 = metodosDePagamento;
+        metodosDePagamento = metodosDePagamento.Where(x => x.Nome != "A prazo").ToList();
+        transacoes = await TransacaoServices.GetAllTrasacoesAsync();
+        await CalcularMetodosDefechamento();
+        StateHasChanged();
+    }
+
+    public async void AbrirCaixaAtual ()
+    {
+        AbrirOuFecharModal();
+        if (NovaTransacao.MetodoId == Guid.Empty)
+        {
+            toastService.ShowError("Preenhcha Todos os campos");
+        }
+        else
+        {
+            await CaixaServices.AbrirCaixa((Transacao)NovaTransacao);
+            NovaTransacao = new();
+            await AtualizaCaixa();
+            toastService.ShowSuccess("Transação realizado com sucesso.");
+        }
+
+    }
+
+    public void NovaTransacaoModal(bool tipo)
+    {
+        tipoDaTransacao = tipo;
+        AbrirOuFecharModal();
+    }
+
+    public void AbrirOuFecharModalAprazo()
+    {
+        modalAPrazo = !modalAPrazo;
+    }
+
+    public async Task AbrirAprazo2()
+    {
+        Cliente cliente = await ClientesServices.GetCliente(clienteId);
+        if (cliente == null)
+        {
+            AbrirOuFecharModalAprazo();
+            toastService.ShowError("O cliente não existe");
+        }
+        else
+        {
+            AbrirOuFecharModalAprazo();
+            vendas = vendas.Where(x => x.IdCliente == clienteId && x.IsPrazo == true && x.IsPago == false).ToList();
+            NovaTransacao.Valor = 0;
+            NovaTransacao.Nome = $"{cliente.Nome} pagou.";
+            totalAreceber = (decimal)cliente.Limite - (decimal)cliente.LimiteRestante;
+            NovaTransacao.Valor += totalAreceber;
+            modalAPrazo2 = !modalAPrazo2;
+            tipoDaTransacao = true;
+        }
+
+
+    }
+    public void FecharModalAprazo2()
+    {
+        modalAPrazo2 = !modalAPrazo2;
+        AbrirOuFecharModalAprazo();
+    }
+
+    public void NovaTransacaoModal1(bool tipo)
+    {
+        tipoDaTransacao = tipo;
+        AbrirOuFecharModalAprazo();
+    }
+
+
+    public async Task RealizarNovaTransacao()
+    {
+        if (caixaAtual == null)
+        {
+            AbrirCaixaAtual();
+        }
+        else
+        {
+            if (NovaTransacao.MetodoId == Guid.Empty || NovaTransacao.Nome == null)
+            {
+                toastService.ShowError("Preenhcha Todos os campos");
+            }
+            else
+            {  
+                if (clienteId != Guid.Empty)
+                {
+                    await ClientesServices.AtualizaPrazoCliente(NovaTransacao.Valor, clienteId);
+                    AbrirOuFecharModal();
+                }
+                NovaTransacao.Tipo = tipoDaTransacao;
+                await TransacaoServices.AddTransacaoAsync(NovaTransacao);
+                NovaTransacao = new();
+                await AtualizaCaixa();
+                AbrirOuFecharModal();
+                modalAPrazo = false;
+                modalAPrazo = false;
+                modalAPrazo2 = false;
+                toastService.ShowSuccess("Transação realizado com sucesso.");
+
+            }
+        }
+    }
+
+    public async Task CalcularMetodosDefechamento()
+    {
+        fechamentos.Clear();
+        foreach (var item in metodosDePagamento2)
+        {
+            FechamentoCaixa fechamentoCaixa = new();
+            fechamentoCaixa.IdMetodo = item.Id;
+            fechamentoCaixa.NomeMetodo = item.Nome;
+            fechamentoCaixa.ValorInformado = 0;
+            fechamentoCaixa.ValorApurado = 0;
+            fechamentoCaixa.Caixa = caixaAtual;
+            List<Transacao> calculoTransacoes = await TransacaoServices.GetTransacoesByMetodoAsync((Guid)item.Id, (Caixa)caixaAtual);
+            if (calculoTransacoes.Count != 0)
+            {
+                foreach (var x in calculoTransacoes)
+                {
+                    if (x.Tipo)
+                    {
+                        fechamentoCaixa.ValorApurado += x.Valor;
+                    }
+                    else
+                    {
+                        fechamentoCaixa.ValorApurado -= x.Valor;
+                    }
+                }
+            }
+            fechamentos.Add(fechamentoCaixa);
+        }
+    }
+
+    public async Task FecharCaixa()
+    {
+        await CaixaServices.FecharCaixa(fechamentos);
+        foreach (var item in fechamentos)
+        {
+            totalInformado += item.ValorInformado;
+        }
+        vendaFechada = true;
+    }
+
+    public async Task ImprimirApuracao()
+    {
+        baixando = true;
+        byte[] bytesDoRelatorio = await CaixaServices.GerarRelatorioApuracao(fechamentos);
+        string nomeDoArquivo = "Apuração.pdf";
+
+        // Tipo de arquivo para indicar ao navegador que é um PDF
+        string tipoDoArquivo = "application/pdf";
+
+        // Criar o stream de bytes para o arquivo
+        await JSRuntime.InvokeAsync<object>("saveAsFile", nomeDoArquivo, bytesDoRelatorio, tipoDoArquivo);
+        baixando = false;
+    }
+    public async Task ImprimirFechamentoDeConta()
+    {
+        baixando = true;
+        byte[] bytesDoRelatorio = await CaixaServices.GerarReciboPagamentoAprazo(NovaTransacao.Valor, totalAreceber);
+        string nomeDoArquivo = "Pagamento.pdf";
+
+        // Tipo de arquivo para indicar ao navegador que é um PDF
+        string tipoDoArquivo = "application/pdf";
+
+        // Criar o stream de bytes para o arquivo
+        await JSRuntime.InvokeAsync<object>("saveAsFile", nomeDoArquivo, bytesDoRelatorio, tipoDoArquivo);
+        baixando = false;
+    }
+}

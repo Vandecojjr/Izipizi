@@ -1,0 +1,23 @@
+﻿@page "/produtos"
+@attribute [Authorize(Roles = "EasyAdmin, Admin, produtos")]
+@rendermode InteractiveServer
+
+<MudTabs Elevation="0" Rounded="true" ApplyEffectsToContainer="false" SliderColor="Color.Dark">
+    <MudTabPanel Style="color:#065A82;" Text="Produtos">
+        <Produtos></Produtos>
+    </MudTabPanel>
+    <AuthorizeView Roles="EasyAdmin,Admin,cadastro/alteracao">
+        <Authorized>
+            <MudTabPanel Style="color:#065A82;" Text="Atualizar Estoque">
+                <AtualizarEstoque></AtualizarEstoque>
+            </MudTabPanel>
+            <MudTabPanel Style="color:#065A82;" Text="Time Line">
+                <TimeLineProdutos></TimeLineProdutos>
+            </MudTabPanel>
+        </Authorized>
+    </AuthorizeView>
+</MudTabs>
+
+@code {
+
+}

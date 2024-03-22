@@ -1,0 +1,89 @@
+﻿@page "/novaCategoria"
+@page "/novaCategoria{Id:guid}"
+@rendermode InteractiveServer
+@attribute [Authorize(Roles = "EasyAdmin, Admin, cadastro/alteracao")]
+@attribute [StreamRendering]
+@inject ICategoriaServices CategoriaServices
+@inject NavigationManager NavigationManager
+@inject IUsuarioServices UsuarioServices
+@using System.Threading.Tasks;
+
+@if (carregando)
+{
+    <MudProgressLinear Color="Color.Info" Indeterminate="true"/>
+}
+else
+{
+
+@if (Id is null)
+{
+    <PageTitle>Cadastrar categoria</PageTitle>
+    <h3>Cadastrar categoria</h3>
+}
+else
+{
+
+    <PageTitle>Editar "@categoria.Nome"</PageTitle>
+    <h3>Editar "@categoria.Nome"</h3>
+}
+
+<EditForm Model="categoria" OnValidSubmit="AcaoCategoria">
+    <DataAnnotationsValidator />
+    <div>
+        <label for="nome">Nome</label>
+        <InputText id="nome" class="form-control" @bind-Value="categoria.Nome"></InputText>
+        <ValidationMessage For="@(() => categoria.Nome)" />
+    </div>
+    <div>
+        <label for="descricao">Descrição</label>
+        <InputTextArea id="descricao" class="form-control" @bind-Value="categoria.Descricao"></InputTextArea>
+    </div>
+    <div class="p-2">
+        <label></label>
+        <button type="submit" class="btn btn-info">Salvar</button>
+        <button type="button" class="btn btn-secondary" onclick="@(()=> NavigationManager.NavigateTo("/categorias"))">Voltar</button>
+    </div>
+</EditForm>
+}
+@code {
+
+    public bool carregando = true;
+    [Parameter]
+    public Guid? Id { get; set; }
+
+    public Categoria categoria { get; set; } = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        carregando = true;
+        bool usuarioAtivo = await UsuarioServices.GetUsuarioAtivo();
+        if (!usuarioAtivo) NavigationManager.NavigateTo("/pagamento");
+        carregando = false;
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (Id is not null)
+        {
+            var item = await CategoriaServices.GetCategoriasByIdAsync((Guid)Id);
+            if (item is not null)
+                categoria = item;
+        }
+
+    }
+        
+    async Task AcaoCategoria()
+    {
+        if (Id is not null)
+        {
+            await CategoriaServices.UpdateCategoriaAsync(categoria);
+            NavigationManager.NavigateTo("/categorias");
+        }
+        else
+        {
+            await CategoriaServices.AddCategoriaAsync(categoria);
+            NavigationManager.NavigateTo("/categorias");
+        }
+    }
+
+}

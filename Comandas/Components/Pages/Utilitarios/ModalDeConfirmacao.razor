@@ -1,0 +1,32 @@
+﻿@if (ExibirConfirmacao)
+{
+    <div class="modal-backdrop show"></div>
+    <div class="modal" tabindex="-1" role="dialog"
+    arial-hidden="true" style="display:block;">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h6 class="modal-title">@Titulo</h6>
+                </div>
+                <div class="modal-body">
+                    @ChildContent
+                </div>
+                <div class="modal-footer">
+                    <MudButton Class="mx-3" OnClick="onConfirma" Variant="Variant.Filled" Color="Color.Error">@BotaoNome</MudButton>
+                    <MudButton OnClick="onCancela" Variant="Variant.Filled">Cancelar</MudButton>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+@code{
+    [Parameter] public bool ExibirConfirmacao { get; set; } = false;
+    [Parameter] public string Titulo { get; set; } = "Testando";
+    [Parameter] public string BotaoNome { get; set; } = "Deletar";
+    [Parameter] public RenderFragment ChildContent { get; set; }
+    [Parameter] public EventCallback onConfirma { get; set; }
+    [Parameter] public EventCallback onCancela { get; set; }
+
+    public void Exibir() => ExibirConfirmacao = true;
+    public void Ocultar() => ExibirConfirmacao = false;
+}

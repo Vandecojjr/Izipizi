@@ -1,0 +1,52 @@
+﻿@page "/pagamento"
+@attribute [Authorize]
+@inject NavigationManager NavigationManager
+@rendermode InteractiveServer
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject NavigationManager NavigationManager
+@inject IUsuarioServices UsuarioServices
+
+
+
+<MudContainer >
+    <MudGrid Justify="Justify.Center">
+        <MudItem xl="3" xs="12"> 
+            <div class="card pt-16 d-flex flex-column mx-auto" style="width: 18rem; height: 25rem;">
+            <h5 class="d-flex justify-content-center"> Assinar plano</h5>
+            <h2 class="d-flex justify-content-center">ANUAL</h2>
+            <h4 class="d-flex justify-content-center">R$ 600,00</h4>
+                <MudButton Class="ma-auto" Variant="Variant.Filled" Size="Size.Large" Color="Color.Tertiary" Style="background:#065A82;" OnClick="Anual">Assinar</MudButton>
+            </div>
+        </MudItem>
+        <MudItem xl="3" xs="12" >
+            <div class="card pt-16 d-flex flex-column mx-auto" style="width: 18rem; height: 25rem;">
+                <h5 class="d-flex justify-content-center"> Assinar plano</h5>
+                <h2 class="d-flex justify-content-center">MENSAL</h2>
+                <h4 class="d-flex justify-content-center">R$ 60,00</h4>
+                <MudButton Class="ma-auto" Variant="Variant.Filled" Size="Size.Large" Color="Color.Tertiary" Style="background:#065A82;" OnClick="Mensal">Mensal</MudButton>
+            </div>
+        </MudItem>
+    </MudGrid>
+</MudContainer>
+
+@code {
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        bool usuarioAtivo = await UsuarioServices.GetUsuarioAtivo();
+        if (usuarioAtivo) NavigationManager.NavigateTo("/");
+    }
+
+    public void Anual()
+    {
+        NavigationManager.NavigateTo("/anual");
+    }
+
+    public void Mensal()
+    {
+        NavigationManager.NavigateTo("/mensal");
+    }
+}

@@ -1,0 +1,39 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Report ScriptLanguage="CSharp" ReportInfo.Created="03/06/2024 16:31:40" ReportInfo.Modified="03/06/2024 16:43:59" ReportInfo.CreatorVersion="2024.1.3.0">
+  <Dictionary>
+    <BusinessObjectDataSource Name="fechamentos" ReferenceName="fechamentos" DataType="System.Int32" Enabled="true">
+      <Column Name="Conta" DataType="System.Int32"/>
+      <Column Name="receber" DataType="System.Int32"/>
+    </BusinessObjectDataSource>
+    <Total Name="Total" TotalType="Count" Expression="[fechamentos.receber]" Evaluator="Data1"/>
+  </Dictionary>
+  <ReportPage Name="Page1" Guides="28.35" Watermark.Font="Arial, 60pt">
+    <ReportTitleBand Name="ReportTitle1" Width="718.2" Height="37.8">
+      <TextObject Name="Text11" Top="18.9" Width="207.9" Height="18.9" Text="fechamento de conta" Font="Roboto Bk, 12pt"/>
+      <TextObject Name="Text12" Left="330.75" Top="18.9" Width="368.55" Height="18.9" Text="[Date]" Format="Date" Format.Format="D" Font="Roboto Cn, 9pt"/>
+      <LineObject Name="Line7" Left="-9450" Top="-9450"/>
+    </ReportTitleBand>
+    <PageHeaderBand Name="PageHeader1" Top="41.8" Width="718.2" Height="28.35" Fill.Color="Silver">
+      <TextObject Name="Text2" Left="56.7" Top="9.45" Width="160.65" Height="18.9" Text="Total da Conta" HorzAlign="Center" Font="Roboto Bk, 10pt"/>
+      <TextObject Name="Text4" Left="340.2" Top="9.45" Width="170.1" Height="18.9" Text="Total a receber" HorzAlign="Center" Font="Roboto Bk, 10pt"/>
+    </PageHeaderBand>
+    <DataBand Name="Data1" Top="74.15" Width="718.2" Height="113.4" DataSource="fechamentos">
+      <TextObject Name="Text1" Left="56.7" Top="9.45" Width="160.65" Height="18.9" Text="[fechamentos.Conta]" Format="Currency" Format.UseLocale="true" Format.DecimalDigits="2" HorzAlign="Center" Font="Roboto Cn, 10pt"/>
+      <TextObject Name="Text3" Left="340.2" Top="9.45" Width="170.1" Height="18.9" Text="[fechamentos.receber]" Format="Currency" Format.UseLocale="true" Format.DecimalDigits="2" HorzAlign="Center" Font="Roboto Cn, 10pt"/>
+      <TextObject Name="Text5" Left="18.9" Top="56.7" Width="94.5" Height="18.9" Text="Eu:" HorzAlign="Center" Font="Roboto Bk, 10pt"/>
+      <LineObject Name="Line1" Left="85.05" Top="75.6" Width="217.35"/>
+      <TextObject Name="Text6" Left="311.85" Top="56.7" Width="94.5" Height="18.9" Text="Recebi:" HorzAlign="Center" Font="Roboto Bk, 10pt"/>
+      <LineObject Name="Line2" Left="387.45" Top="75.6" Width="292.95"/>
+      <TextObject Name="Text7" Left="18.9" Top="85.05" Width="94.5" Height="18.9" Text="De:" HorzAlign="Center" Font="Roboto Bk, 10pt"/>
+      <LineObject Name="Line3" Left="85.05" Top="103.95" Width="217.35"/>
+      <TextObject Name="Text8" Left="311.85" Top="94.5" Width="94.5" Height="18.9" Text="Um total de :" HorzAlign="Center" Font="Roboto Bk, 10pt"/>
+      <TextObject Name="Text9" Left="415.8" Top="94.5" Width="94.5" Height="18.9" Text="[fechamentos.receber]" Format="Currency" Format.UseLocale="true" Format.DecimalDigits="2" HorzAlign="Center" Font="Roboto Cn, 10pt"/>
+      <LineObject Name="Line5" Left="718.2" Width="-718.2"/>
+      <LineObject Name="Line6" Left="718.2" Top="37.8" Width="-718.2"/>
+    </DataBand>
+    <PageFooterBand Name="PageFooter1" Top="191.55" Width="718.2" Height="18.9">
+      <LineObject Name="Line4" Left="718.2" Width="-718.2"/>
+      <TextObject Name="Text10" Left="245.7" Width="132.3" Height="18.9" Text="vendas.izipizi.site" HorzAlign="Center" Font="Arial, 10pt"/>
+    </PageFooterBand>
+  </ReportPage>
+</Report>

@@ -1,0 +1,41 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Report ScriptLanguage="CSharp" ReportInfo.Created="03/06/2024 13:20:57" ReportInfo.Modified="03/06/2024 13:29:08" ReportInfo.CreatorVersion="2024.1.3.0">
+  <Dictionary>
+    <BusinessObjectDataSource Name="transacoes" ReferenceName="transacoes" DataType="System.Int32" Enabled="true">
+      <Column Name="Nome" DataType="System.String"/>
+      <Column Name="UserNome" DataType="System.String"/>
+      <Column Name="Data" DataType="System.DateTime"/>
+      <Column Name="Tipo" DataType="System.String"/>
+      <Column Name="Valor" DataType="System.Decimal"/>
+      <Column Name="MetodoNome" DataType="System.String"/>
+    </BusinessObjectDataSource>
+  </Dictionary>
+  <ReportPage Name="Page1" Watermark.Font="Arial, 60pt">
+    <ReportTitleBand Name="ReportTitle1" Width="718.2" Height="37.8">
+      <TextObject Name="Text14" Left="18.9" Width="330.75" Height="37.8" Text="Relatório de transações de caixa" Font="Roboto Bk, 16pt"/>
+      <TextObject Name="Text15" Left="434.7" Top="18.9" Width="274.05" Height="18.9" Text="[Date]" Format="Date" Format.Format="D" Font="Roboto Cn, 9pt"/>
+    </ReportTitleBand>
+    <PageHeaderBand Name="PageHeader1" Top="41.8" Width="718.2" Height="28.35" Fill.Color="LightGray">
+      <TextObject Name="Text2" Top="9.45" Width="94.5" Height="18.9" Text="Nome" HorzAlign="Center" Font="Roboto Bk, 9pt"/>
+      <TextObject Name="Text4" Left="103.95" Top="9.45" Width="132.3" Height="18.9" Text="UserNome" HorzAlign="Center" Font="Roboto Bk, 9pt"/>
+      <TextObject Name="Text6" Left="245.7" Top="9.45" Width="122.85" Height="18.9" Text="Data" HorzAlign="Center" Font="Roboto Bk, 9pt"/>
+      <TextObject Name="Text8" Left="378" Top="9.45" Width="94.5" Height="18.9" Text="Tipo" HorzAlign="Center" Font="Roboto Bk, 9pt"/>
+      <TextObject Name="Text10" Left="491.4" Top="9.45" Width="94.5" Height="18.9" Text="Valor" HorzAlign="Center" Font="Roboto Bk, 9pt"/>
+      <TextObject Name="Text12" Left="604.8" Top="9.45" Width="94.5" Height="18.9" Text="MetodoNome" HorzAlign="Center" Font="Roboto Bk, 9pt"/>
+    </PageHeaderBand>
+    <DataBand Name="Data1" Top="74.15" Width="718.2" Height="37.8" DataSource="transacoes">
+      <LineObject Name="Line2" Left="718.2" Width="-718.2"/>
+      <TextObject Name="Text1" Top="9.45" Width="94.5" Height="18.9" Text="[transacoes.Nome]" Font="Roboto Cn, 7pt"/>
+      <TextObject Name="Text3" Left="103.95" Top="9.45" Width="132.3" Height="18.9" Text="[transacoes.UserNome]" HorzAlign="Center" Font="Roboto Cn, 7pt"/>
+      <TextObject Name="Text5" Left="245.7" Top="9.45" Width="122.85" Height="18.9" Text="[transacoes.Data]" HorzAlign="Center" Font="Roboto Cn, 9pt"/>
+      <TextObject Name="Text7" Left="378" Top="9.45" Width="94.5" Height="18.9" Text="[transacoes.Tipo]" HorzAlign="Center" Font="Roboto Cn, 9pt"/>
+      <TextObject Name="Text9" Left="491.4" Top="9.45" Width="94.5" Height="18.9" Text="[transacoes.Valor]" Format="Currency" Format.UseLocale="true" Format.DecimalDigits="2" HorzAlign="Center" WordWrap="false" Font="Roboto Cn, 9pt" Trimming="EllipsisCharacter"/>
+      <TextObject Name="Text11" Left="604.8" Top="9.45" Width="94.5" Height="18.9" Text="[transacoes.MetodoNome]" HorzAlign="Center" Font="Roboto Cn, 9pt"/>
+    </DataBand>
+    <PageFooterBand Name="PageFooter1" Top="115.95" Width="718.2" Height="28.35">
+      <LineObject Name="Line1" Left="718.2" Width="-718.2"/>
+      <LineObject Name="Line3" Top="28.35"/>
+      <TextObject Name="Text13" Left="245.7" Top="9.45" Width="160.65" Height="18.9" Text="vendas.izipizi.site" HorzAlign="Center" Font="Roboto Cn, 9pt"/>
+    </PageFooterBand>
+  </ReportPage>
+</Report>

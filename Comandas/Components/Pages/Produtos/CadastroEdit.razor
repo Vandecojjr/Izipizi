@@ -1,0 +1,232 @@
+﻿@page "/novoProduto"
+@page "/novoProduto{Id:guid}"
+@attribute [Authorize(Roles = "EasyAdmin, Admin, cadastro/alteracao")]
+
+@attribute [StreamRendering]
+@using Blazored.Toast.Configuration
+@using Blazored.Typeahead
+
+@inject IToastService toastService
+@inject ICategoriaServices CategoriaServices
+@inject IProdutoServices ProdutoServices
+@inject NavigationManager NavigationManager
+@inject IUsuarioServices UsuarioServices
+@rendermode InteractiveServer
+
+
+@if (carregando)
+{
+    <MudProgressLinear Color="Color.Info" Indeterminate="true"/>
+}
+else
+{
+
+@if (Id is null)
+{
+    <PageTitle>Cadastrar produto</PageTitle>
+    <h3>Cadastrar produto</h3>
+}
+else
+{
+
+    <PageTitle>Editar "@produto.Nome"</PageTitle>
+    <h3>Editar "@produto.Nome"</h3>
+}
+
+
+@if (categorias.Count == 0)
+{
+    <ModalDeBloqueio Titulo="Cadastre uma categoria"
+        onCancela="@(()=> NavigationManager.NavigateTo("/produtos"))"
+        onConfirma="@(()=> NavigationManager.NavigateTo("/novaCategoria"))">
+        Por favor cadastre uma categoria primeiro
+    </ModalDeBloqueio>
+}
+else
+{
+
+<BlazoredToasts Position="ToastPosition.TopRight"
+                Timeout="5"
+                IconType="IconType.Material"
+                InfoIcon="school"
+                WarningIcon="warning" />
+
+<MudPaper Class="pa-3">
+<div>
+    <MudSwitch @bind-Value="produto.IsVolume" Label="Produto Volume?" Color="Color.Success" />
+</div>
+
+    @if (produto.IsVolume)
+    {
+        <div>
+            <BlazoredTypeahead SearchMethod="buscar" @bind-Value="produtoSelecionado">
+                <SelectedTemplate>
+                    Cod @context.Codigo ------- @context.Nome
+                </SelectedTemplate>
+                <ResultTemplate>
+                    Cod @context.Codigo ------- @context.Nome
+                </ResultTemplate>
+            </BlazoredTypeahead>
+        </div>
+        <div>
+            <label for="qntVolume">Quantidade do volume</label>
+            <InputNumber id="qntVolume" class="form-control" @bind-Value="produto.QuantidadeVolume"></InputNumber>
+        </div>
+    }
+</MudPaper>
+
+<EditForm Model="produto" OnValidSubmit="AcaoProduto">
+    <DataAnnotationsValidator/>
+    <div>
+        <label for="codigo">Codigo</label>
+        <InputNumber id="codigo" class="form-control" @bind-Value="produto.Codigo"></InputNumber>
+    </div>
+    <div>
+        <label for="nome">Nome</label>
+        <InputText id="nome" class="form-control" @bind-Value="produto.Nome"></InputText>
+        <ValidationMessage For="@(() => produto.Nome)"/>
+    </div>
+    <div>
+        <label for="quantidade">Quantidade</label>
+        <InputNumber id="quantidade" class="form-control" @bind-Value="produto.Quantidade"></InputNumber>
+    </div>
+    <div>
+        <label for="categoria">Categoria</label>
+        <InputSelect id="categoria" class="form-control" @bind-Value="produto.ID_categoria">
+            <option selected >Selecione uma categoria</option>
+            @if (categorias != null)
+            {
+                @foreach (var categoria in categorias)
+                {
+                    <option value="@categoria.CategoriaId">@categoria.Nome</option>
+                }
+            }
+        </InputSelect>
+            <ValidationMessage For="@(() => produto.ID_categoria)" />
+    </div>
+    <div>
+        <label for="valor">Valor</label>
+        <InputNumber format="C" id="valor" class="form-control" @bind-Value="produto.Valor"></InputNumber>
+    </div>
+        <div input-group mb-3>
+        <label for="valorDeCusto">Valor de custo</label>
+        <InputNumber format="C" id="valorDeCusto" class="form-control" @bind-Value="produto.ValorDeCusto"></InputNumber>
+    </div>
+    <div>
+        <label for="margeDeLucro">Margem de lucro</label>
+        <InputNumber id="margeDeLucro" class="form-control" @bind-Value="produto.MargemLucro"></InputNumber>
+    </div>
+    <div>
+        <MudSwitch @bind-Value="produto.PrecoAutomatico" Label="Calcular preço automaticamente?" Color="Color.Success" />
+    </div>
+    <div>
+        <MudSwitch @bind-Value="produto.IsActive" Label="Ativo" Color="Color.Success" />
+    </div>
+    <div>
+        <MudSwitch @bind-Value="produto.IsControled" Label="Controlar Estoque?" Color="Color.Success" />
+    </div>
+    <div class="p-2">
+        <label></label>
+    <button type="submit" class="btn btn-info">Salvar</button>
+    <button type="button" class="btn btn-secondary" onclick="@(() => NavigationManager.NavigateTo("/produtos"))">Voltar</button>
+    </div>
+</EditForm>
+}
+}
+@code {
+    public bool carregando = true;
+    [Parameter]
+    public Guid? Id { get; set; }
+    public Produto produto { get; set; } = new();
+    private Produto produtoSelecionado = null;
+    public Produto confereCodigo { get; set; } = new();
+    public int produtoCodigo { get; set; }
+    public int? QuantidadeDoProdutoSeForProdutoVolume { get; set; }
+    public bool AlterouAQunatidadeProdutoVolume { get; set; }
+    
+
+    List<Categoria> categorias = new List<Categoria>();
+    List<Produto> ProdutosVolume = new List<Produto>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        bool usuarioAtivo = await UsuarioServices.GetUsuarioAtivo();
+        if (!usuarioAtivo) NavigationManager.NavigateTo("/pagamento");
+        carregando = true;
+        categorias = await CategoriaServices.GetAllCategoriasAsync();
+        ProdutosVolume = await ProdutoServices.GetAllProdutosAsync();
+
+        if (Id != null)
+        {
+            produto = await ProdutoServices.GetProdutosByIdAsync((Guid)Id);
+            if(produto.CodigoDoProdutoVolume != null)
+                produtoSelecionado = await ProdutoServices.GetProdutosByIdAsync((Guid)produto.CodigoDoProdutoVolume);
+            QuantidadeDoProdutoSeForProdutoVolume = produto.Quantidade;
+        }
+        carregando = false;
+    }
+
+    async Task Cadastrar()
+    {
+        if (produto.MargemLucro != null) produto.MargemLucro = produto.MargemLucro / 100;
+        if (QuantidadeDoProdutoSeForProdutoVolume != produto.Quantidade) AlterouAQunatidadeProdutoVolume = true;
+        if (produto.IsVolume)
+        {
+            if (produtoSelecionado is null) toastService.ShowError("Deve ser selecionado um produto para volume");
+            else if (produto.QuantidadeVolume < 2) toastService.ShowError(" A quantidade de volume deve ser pelomenos 2.");
+            else
+            {
+                if (Id != null)
+                {
+
+                    await ProdutoServices.UpdateProdutoAsync(produto, AlterouAQunatidadeProdutoVolume);
+                }
+                else
+                {
+                    await ProdutoServices.AddProdutoAsync(produto);
+                }
+                NavigationManager.NavigateTo("/produtos");
+            }
+        }
+        else
+        {
+            if (Id != null)
+            {
+
+                await ProdutoServices.UpdateProdutoAsync(produto, AlterouAQunatidadeProdutoVolume);
+            }
+            else
+            {
+                await ProdutoServices.AddProdutoAsync(produto);
+            }
+            NavigationManager.NavigateTo("/produtos");
+        }
+
+    }
+
+    async Task AcaoProduto()
+    {
+        if (produto.IsVolume) produto.CodigoDoProdutoVolume = produtoSelecionado.Id;
+        produtoCodigo = produto.Codigo;
+        confereCodigo = await ProdutoServices.GetProdutosByCodigoAsync(produtoCodigo);
+        if (confereCodigo != null)
+        {
+            if (Id != null)
+            {
+                if (Id == confereCodigo.Id) await Cadastrar();
+                else toastService.ShowError("O código do produto ja existe no sistema!");
+            }
+            else toastService.ShowError("O código do produto ja existe no sistema!"); 
+        }
+        else
+        {
+           await Cadastrar();
+        }
+    }
+
+    private async Task<IEnumerable<Produto>> buscar(string value)
+    {
+        return await Task.FromResult(ProdutosVolume.Where(x => x.IsActive && x.IsVolume != true && (x.Nome.ToLower().Contains(value.ToLower()) || x.Codigo.ToString().ToLower().Contains(value))).ToList());
+    }
+
+}

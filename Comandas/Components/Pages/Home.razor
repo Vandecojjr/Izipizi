@@ -1,0 +1,27 @@
+﻿@page "/"
+@attribute [Authorize]
+@inject IUsuarioServices UsuarioServices
+@inject NavigationManager NavigationManager
+<PageTitle>Home</PageTitle>
+
+<MudPaper Height="840px" Width="100%">
+    <MudContainer Class="d-flex flex-column justify-content-center" Fixed="true">
+        <MudPaper Height="400px" Class="flex-column justify-content-center" Style="margin-top:20%;" Elevation="0" Width="100%" Square="true">
+            @* <h5 class="d-flex justify-content-center" style="color:#065A82;">Seja bem vindo ao </h5> *@
+            @* <h1 class="d-flex justify-content-center" style="color:#065A82; font-size:100px;">IZIPIZI</h1> *@
+            <div class="d-flex justify-content-center">
+            <MudImage Src="LOGO.png" Width="300"></MudImage>
+            </div>
+        </MudPaper>
+    </MudContainer>
+</MudPaper>
+
+@code{
+    protected override async Task OnInitializedAsync()
+    {
+        bool usuarioAtivo = await UsuarioServices.GetUsuarioAtivo();
+        if (!usuarioAtivo) NavigationManager.NavigateTo("/pagamento");
+        await UsuarioServices.AtivarLogado();
+    }
+}
+

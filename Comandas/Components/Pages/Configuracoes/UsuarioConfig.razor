@@ -1,0 +1,228 @@
+﻿@rendermode InteractiveServer
+@inject IUsuarioServices UsuarioServices
+@attribute [StreamRendering]
+@inject IToastService toastService
+@inject IUsuarioServices UsuarioServices
+@inject NavigationManager NavigationManager
+@using Blazored.Toast.Configuration
+@using Blazored.Typeahead
+@using System.Globalization
+
+<BlazoredToasts Position="ToastPosition.TopRight"
+                Timeout="5"
+                IconType="IconType.Material"
+                InfoIcon="school"
+                WarningIcon="warning" />
+
+@if (carregando)
+{
+    <MudProgressLinear Color="Color.Info" Indeterminate="true"/>
+}
+else
+{
+
+<ModalDeConfirmacao @ref="modalConfirmacao" onCancela="() => modalConfirmacao.Ocultar()" onConfirma="() => DeletarUsuario(idUsuarioDeletar)" Titulo="Deletar Usuario">
+    Deseja realmente deletar este usuario?
+</ModalDeConfirmacao>
+
+<MudContainer Class="mt-2" MaxWidth="MaxWidth.False">
+    <MudGrid>
+        <MudItem sm="12" xs="12" xl="12" md="12">
+            <MudPaper Elevation="2" Class="pa-4">
+                @if (usuarios.Count == 0)
+                {
+                    <h5>Nenhum usuário cadastrado.</h5>
+                }
+                else
+                {
+                    <MudExpansionPanels Elevation="0">
+                        @foreach (var item in usuarios)
+                        {
+                            <MudExpansionPanel Text="@item.Email">
+                                @foreach (var perfil in item.PerfisDesteUser)
+                                {
+                                    <MudPaper Elevation="0" Class="d-flex">
+                                        <h7 class="mt-4" style="color:#1B3B6F;">@perfil.Nome</h7>
+                                        <MudIconButton Color="Color.Error" Icon="@Icons.Material.Outlined.Delete" OnClick="() => RemoverPerfilDoUsuario(perfil.Nome,item.Id)" />
+                                    </MudPaper>
+                                }
+                                <MudButton OnClick="() => AbrirModalDelete(item.Id)" Color="Color.Error">Deletar Usuario</MudButton>
+                                <MudButton OnClick="() => porcent(item.Id)" Color="Color.Info">Alterar porcentagem</MudButton>
+                                <h7>@(string.Format("{0:p}", item.porcentagemUsuario))</h7>
+                            </MudExpansionPanel>
+                        }
+                    </MudExpansionPanels>
+                }
+            </MudPaper>
+        </MudItem>
+
+        <MudItem sm="6" xs="12" xl="12" md="6">
+            <MudPaper Elevation="2" Class="pa-4">
+                @if (alterarPorcent)
+                {
+                    <div>
+                        <label>Porcentagem</label>
+                        <InputNumber @bind-Value="porcentUsuario" class="form-control"></InputNumber>
+                    </div>
+                    <MudButton OnClick="() => AlterarPorcentagem()">Gravar</MudButton>
+                }
+                else
+                {
+                    <div>
+                        <label>Email</label>
+                        <InputText @bind-Value="novoUsuarioEmail" class="form-control"></InputText>
+                    </div>
+                    <div>
+                        <label>Senha</label>
+                        <InputText type="password" @bind-Value="novoUsuarioSenha" class="form-control"></InputText>
+                    </div>
+                    <div>
+                        <label>Desconto Max.</label>
+                        <InputNumber @bind-Value="porcentUsuario" class="form-control"></InputNumber>
+                    </div>
+                    <MudButton OnClick="() => CadastrarNovoUsuario()">Gravar</MudButton>
+                }
+                
+            </MudPaper>
+        </MudItem>
+
+        <MudItem sm="6" xs="12" xl="12" md="6">
+            <MudPaper Elevation="2" Class="pa-4">
+                <div class="py-2">
+                    <InputSelect class="form-control" @bind-Value="usuarioId">
+                        <option selected>Selecione um usuário</option>
+                        @foreach (var item in usuarios)
+                        {
+                            <option value="@item.Id">@item.Email</option>
+                        }
+                    </InputSelect>
+                </div>
+                <div class="py-2">
+                    <InputSelect class="form-control" @bind-Value="novoPerfilUsuario">
+                        <option selected>Selecione um perfil.</option>
+                        @foreach (var item in perfis)
+                        {
+                            <option value="@item.Nome">@item.Nome</option>
+                        }
+                    </InputSelect>
+                </div>
+                <MudButton OnClick="() => GravarPerfilDoUsuario()">Gravar</MudButton>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+</MudContainer>
+}
+
+@code {
+    bool carregando = true;
+    List<Usuario> usuarios = new List<Usuario>();
+    List<PerfilUsuario> perfis = new List<PerfilUsuario>();
+
+    ModalDeConfirmacao modalConfirmacao;
+    string idUsuarioDeletar { get; set; }
+
+    public string novoPerfilUsuario { get; set; }
+    public string usuarioId { get; set; }
+
+    public string novoUsuarioEmail { get; set; }
+    public string novoUsuarioSenha { get; set; }
+    public decimal porcentUsuario { get; set; }
+    public bool alterarPorcent = false;
+    
+
+    protected override async Task OnInitializedAsync()
+    {
+        bool usuarioAtivo = await UsuarioServices.GetUsuarioAtivo();
+        if (!usuarioAtivo) NavigationManager.NavigateTo("/pagamento");
+        carregando = true;
+        await AtualizaInfo();
+        carregando = false;
+
+    }
+
+    public async Task AtualizaInfo()
+    {
+        usuarios = await UsuarioServices.GetUsuariosDependentes();
+        perfis = await UsuarioServices.GetPerfils();
+        PerfilUsuario perfil = perfis.FirstOrDefault(x => x.Nome == "EasyAdmin");
+        perfis.Remove(perfil);
+        StateHasChanged();
+    }
+
+    public async Task RemoverPerfilDoUsuario(string nomePerfil, string idUsuario)
+    {
+        await UsuarioServices.DeletePerfilDoUsuario(nomePerfil, idUsuario);
+        await AtualizaInfo();
+    }
+
+    public async Task CadastrarNovoUsuario()
+    {
+        Usuario usuario = new();
+        usuario.Email = novoUsuarioEmail;
+        usuario.Senha = novoUsuarioSenha;
+        if (porcentUsuario == null || porcentUsuario == 0)
+        {
+            usuario.porcentagemUsuario = 0;
+        }
+        else
+        {
+            usuario.porcentagemUsuario = porcentUsuario / 100;
+        }
+
+        bool novoUsuario = await UsuarioServices.AddUsuárioDependente(usuario);
+        await AtualizaInfo();
+
+        usuario.Email = null;
+        usuario.Senha = null;
+
+        if (novoUsuario)
+        {
+            toastService.ShowSuccess("Usuario Cadastrado com sucesso.");
+        }
+        else
+        {
+            toastService.ShowError("O limite de usuários cadastrados foi atingido.");
+        }
+    }
+
+    public void AbrirModalDelete(string id)
+    {
+        modalConfirmacao.Exibir();
+        idUsuarioDeletar = id;
+    }
+
+    public async Task DeletarUsuario(string id)
+    {
+        await UsuarioServices.DeletarUsuario(id);
+        await AtualizaInfo();
+    }
+
+    public async Task GravarPerfilDoUsuario()
+    {
+        await UsuarioServices.AtualizarPerfilUsuario(usuarioId, novoPerfilUsuario);
+        await AtualizaInfo();
+        novoPerfilUsuario = null;
+        usuarioId = null;
+    }
+
+    public void porcent(string id ) 
+    {
+        usuarioId = id;
+        alterarPorcent = true;
+    }
+
+    public async Task AlterarPorcentagem()
+    {
+        if (porcentUsuario == null || porcentUsuario == 0)
+        {
+            porcentUsuario = 0;
+        }
+        else
+        {
+            porcentUsuario = porcentUsuario / 100;
+        }
+        await UsuarioServices.AtualizarPorcentagemUsuario(usuarioId, porcentUsuario);
+        alterarPorcent = false;
+    }
+
+}

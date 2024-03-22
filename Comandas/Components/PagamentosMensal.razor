@@ -1,0 +1,44 @@
+﻿@page "/mensal"
+@attribute [Authorize]
+@rendermode InteractiveServer
+@using MercadoPago.Client.Common
+@using MercadoPago.Client.Payment
+@using MercadoPago.Config
+@using MercadoPago.Resource.Payment
+@using Microsoft.JSInterop
+@inject IJSRuntime JSRuntime
+
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject NavigationManager NavigationManager
+@inject IUsuarioServices UsuarioServices
+
+<MudContainer>
+    <MudGrid Justify="Justify.Center">
+        <MudItem xl="6">
+            <div id="paymentBrick_container"></div>
+        </MudItem>
+        <MudItem xl="6">
+            <div id="statusScreenBrick_container"></div>
+        </MudItem>
+    </MudGrid>
+</MudContainer>
+
+@code {
+    decimal amount = 60;
+    int parcelas = 1;
+    bool paymentMethods = false;
+
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        bool usuarioAtivo = await UsuarioServices.GetUsuarioAtivo();
+        if (usuarioAtivo) NavigationManager.NavigateTo("/");
+        await JSRuntime.InvokeVoidAsync("updateAmount", amount, parcelas, paymentMethods);
+
+    }
+
+}

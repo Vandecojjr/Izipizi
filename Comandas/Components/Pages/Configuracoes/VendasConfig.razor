@@ -1,0 +1,194 @@
+﻿@rendermode InteractiveServer
+@inject IMetodoDePagamentoServices MetodoDePagamentoServices
+@inject IUsuarioServices UsuarioServices
+@inject NavigationManager NavigationManager
+@attribute [StreamRendering]
+
+@if (carregando)
+{
+    <MudProgressLinear Color="Color.Info" Indeterminate="true"/>
+}
+else
+{
+
+@if (abrirModalNovoMetodo)
+{
+    <div class="modal-backdrop show"></div>
+    <div class="modal" tabindex="-1" role="dialog"
+         arial-hidden="true" style="display:block;">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    @if (deletar)
+                    {
+                        <h6 class="modal-title">Deletar Metodo de pagamento.</h6>
+                    }
+                    else
+                    {
+                        <h6 class="modal-title">Metodo de pagamento.</h6>
+                    }
+                </div>
+                  @if (deletar)
+                {
+                    <div class="modal-body">
+                        <h2>Deletar Metodo de pagamento?</h2>
+                    </div>
+                    <div class="modal-footer">
+                        <MudButton Class="mx-3" OnClick="CadastrarNovoMetodo" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Delete" Color="Color.Error">Deletar</MudButton>
+                        <MudButton OnClick="() => AbrirOuFecharModalMetodoDePagamento()" Variant="Variant.Filled">Cancelar</MudButton>
+                    </div>
+                 }
+                else
+                {
+                    <EditForm Model="metodo" OnSubmit="CadastrarNovoMetodo">
+                        <div class="modal-body">
+                                @if (metodo.Nome == "Dinheiro")
+                                {
+                                    <label for="nome">Nome</label>
+                                    <InputText disabled id="nome" class="form-control" @bind-Value="metodo.Nome"></InputText>
+                                }
+                                else
+                                {
+                                    <label for="nome">Nome</label>
+                                    <InputText id="nome" class="form-control" @bind-Value="metodo.Nome"></InputText>
+                                }
+                            
+                            <label for="nome">Nome</label>
+                            <MudSwitch @bind-Value="metodo.Padrao" Color="Color.Success" Label="Padrão"></MudSwitch>
+                        </div>
+                        <div class="modal-footer">
+                            <MudButton Class="mx-3" ButtonType="ButtonType.Submit" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Delete" Color="Color.Error">Aplicar</MudButton>
+                            <MudButton OnClick="() => AbrirOuFecharModalMetodoDePagamento()" Variant="Variant.Filled">Cancelar</MudButton>
+                        </div>
+                    </EditForm>
+                }
+            </div>
+        </div>
+    </div>
+}
+
+<MudContainer Class="mt-2" MaxWidth="MaxWidth.False">
+    <MudGrid>
+        <MudItem sm="12" xs="12" xl="12" md="12">
+            <MudPaper Elevation="2" Class="pa-4">
+            <table class="table">
+                <thead>
+                    <tr>
+                    <th>Nome</th>
+                    <th>Padrão</th>
+                    <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in metodos)
+                    {
+                        <tr>
+                            <td>@item.Nome</td>
+                            <td>
+                            @if (item.Padrao)
+                            {
+                                
+                                <MudIcon Icon="@Icons.Material.Filled.CheckCircleOutline" Color="Color.Success" Title="Ativo" />
+                               
+                            }
+                            </td>
+                                <td>
+                                        @if (item.Nome != "Credito" && item.Nome != "Debito" && item.Nome != "A prazo" && item.Nome != "Dinheiro" && item.Nome != "Pix")
+                                    {
+                                        <MudIconButton Size="Size.Small" Color="Color.Info" Icon="@Icons.Material.Outlined.Edit" OnClick="@(() => AbrirOuFecharModalMetodoDePagamento(true, item.Id))" />
+                                        <MudIconButton Size="Size.Small" Color="Color.Error" Icon="@Icons.Material.Outlined.Delete" OnClick="@(() => AbrirOuFecharModalMetodoDePagamento(false, item.Id, true))" />
+                                    }
+                                    else if (item.Nome == "Dinheiro" || item.Nome == "Pix")
+                                    {
+                                        <MudIconButton Size="Size.Small" Color="Color.Info" Icon="@Icons.Material.Outlined.Edit" OnClick="@(() => AbrirOuFecharModalMetodoDePagamento(true, item.Id))" />
+                                    }
+                                </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+                <MudButton  OnClick="() => AbrirOuFecharModalMetodoDePagamento()" Variant="Variant.Filled">Novo Metodo</MudButton>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+</MudContainer>
+}
+@code {
+    public bool carregando = true;
+    public bool abrirModalNovoMetodo = false;
+    List<MetodoDePagamento> metodos = new List<MetodoDePagamento>(); 
+    MetodoDePagamento metodo = new();
+
+    bool editar = false;
+    bool deletar = false;
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        carregando = true;
+        await MetodoDePagamentoServices.MetodosIniciais();
+        metodos = await MetodoDePagamentoServices.GetAllMetodosAsync();
+        bool usuarioAtivo = await UsuarioServices.GetUsuarioAtivo();
+        if (!usuarioAtivo) NavigationManager.NavigateTo("/pagamento");
+        carregando = false;
+
+    }
+    public async Task AbrirOuFecharModalMetodoDePagamento(bool edit = false, Guid id = default, bool delete = false)
+    {
+
+        if (edit && !delete)
+        {
+            metodo = await MetodoDePagamentoServices.GetMetodoDePagamentoAsync(id);
+            editar = true;
+            abrirModalNovoMetodo = !abrirModalNovoMetodo;
+        }
+        else if (!edit && delete)
+        {
+            editar = false;
+            deletar = true;
+            metodo = await MetodoDePagamentoServices.GetMetodoDePagamentoAsync(id);
+            abrirModalNovoMetodo = !abrirModalNovoMetodo;
+        }
+        else
+        {
+            metodo = new();
+            deletar = false;
+            editar = false;
+            abrirModalNovoMetodo = !abrirModalNovoMetodo;
+        }
+
+
+    }
+
+    async Task CadastrarNovoMetodo()
+    {
+        if (deletar)
+        {
+            await DeletarMetodo(metodo.Id);
+            metodos = await MetodoDePagamentoServices.GetAllMetodosAsync();
+            await AbrirOuFecharModalMetodoDePagamento();
+        }
+        else if(!deletar && editar)
+        {
+            await MetodoDePagamentoServices.EditarMetodo(metodo);
+            metodos = await MetodoDePagamentoServices.GetAllMetodosAsync();
+            await AbrirOuFecharModalMetodoDePagamento();
+        }
+        else
+        {
+
+            await MetodoDePagamentoServices.AddMetodoAsync(metodo);
+            metodos = await MetodoDePagamentoServices.GetAllMetodosAsync();
+            metodo = new();
+            await AbrirOuFecharModalMetodoDePagamento();
+
+        }
+    }
+    async Task DeletarMetodo(Guid id)
+    {
+        await MetodoDePagamentoServices.Deletar(id);
+    }
+
+
+
+}

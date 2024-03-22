@@ -1,0 +1,355 @@
+﻿@rendermode InteractiveServer
+@attribute [StreamRendering]
+@inject ICaixaServices CaixaServices
+@inject ITransacaoServices TransacaoServices
+@inject IToastService toastService
+@inject IJSRuntime JSRuntime
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject NavigationManager NavigationManager
+@inject IUsuarioServices UsuarioServices
+@using Blazored.Toast.Configuration
+@using Blazored.Typeahead
+@using System.Threading.Tasks;
+@using Microsoft.AspNetCore.Authorization
+@using System.Security.Claims
+
+
+<BlazoredToasts Position="ToastPosition.TopRight"
+                Timeout="5"
+                IconType="IconType.Material"
+                InfoIcon="school"
+                WarningIcon="warning" />
+
+@if (carregando)
+{
+    <MudProgressLinear Color="Color.Info" Indeterminate="true"/>
+}
+else
+{
+
+@* Modal de Apuração do caixa *@
+@if (modalApuracao)
+{
+    <div class="modal-backdrop show"></div>
+    <div class="modal" tabindex="-1" role="dialog"
+         arial-hidden="true" style="display:block;">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <MudPaper Elevation="0" Class="pa-3">
+                        <h6 class="text-info">Apuração do sistema</h6>
+                        <table class="table pa-2">
+                        <thead>
+                            <tr>
+                            @foreach (var item in fechamentos)
+                            {
+                                <th>@item.NomeMetodo</th>
+                            }
+                            <th>Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                            @foreach (var item in fechamentos)
+                            {
+                                <td>@(string.Format("{0:C}", item.ValorApurado))</td>
+                            }
+                                    <th>@(string.Format("{0:C}", total))</th>
+                            </tr>
+                        </tbody>
+                    </table>
+                        <h6 class="text-info">Valores informado pelo usuário</h6>
+                    <table class="table">
+                        <thead>
+                             <tr>
+                            @foreach (var item in fechamentos)
+                            {
+                            <th>@item.NomeMetodo</th>
+                            }
+                        <th>Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                            @foreach (var item in fechamentos)
+                            {
+                            <td>@(string.Format("{0:C}", item.ValorInformado))</td>
+                            }
+                        <th>@(string.Format("{0:C}", totalInformado))</th>
+                        </tr>
+                        </tbody>
+                    </table>
+                        <h6 class="text-info">Diferença de Valores</h6>
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    @foreach (var item in fechamentos)
+                                    {
+                                        <th>@item.NomeMetodo</th>
+                                    }
+                                    <th>Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    @foreach (var item in fechamentos)
+                                    {
+                                        <td>@(string.Format("{0:C}", (item.ValorInformado - item.ValorApurado)))</td>
+                                    }
+                                    <th>@(string.Format("{0:C}", (totalInformado - total)))</th>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <MudButton OnClick="FecharModalDeApuracao" Class="mx-3" Variant="Variant.Filled" Color="Color.Info">OK</MudButton>
+                        @if (baixando)
+                        {
+                            <MudProgressCircular Class="mb-1 ms-1" Color="Color.Info" Size="Size.Small" Indeterminate="true" />
+                        }
+                        else
+                        {
+                            <MudIconButton OnClick="ImprimirApuracao" Color="Color.Info" Icon="@Icons.Material.Filled.FileDownload" aria-label="Bixar apuração"></MudIconButton>
+                        }                     
+                </MudPaper>
+        </div>
+    </div>
+</div>
+
+}
+@* ----------------------------------------------- *@
+
+@* Modal de confirmacao do caixa *@
+    <ModalDeConfirmacao @ref="modalConfirmacao" Titulo="@tituloModalConfirmacao" onConfirma="() => ReabrirCaixa()" BotaoNome="Reabrir" onCancela="() => FecharModalDeConfirmacao()">
+    <h5>@CorpoModalConfirmacao</h5>
+    </ModalDeConfirmacao>
+@* ----------------------------------------------- *@
+
+@* Modal de transições do caixa *@
+@if (modalTransacoes)
+{
+    <div class="modal-backdrop show"></div>
+    <div class="modal" tabindex="-1" role="dialog"
+         arial-hidden="true" style="display:block;">
+        <div class="modal-dialog modal-dialog-centered modal-xl" role="document">
+            <div class="modal-content">
+                <MudDataGrid T="Transacao" Items="@transacoes">
+                    <ToolBarContent>
+                        <MudText Typo="Typo.h6">Transações</MudText>
+                    </ToolBarContent>
+                    <Columns>
+                        <PropertyColumn Property="x => x.Nome" Sortable="false" Title="Nome" Filterable="false" />
+                        <PropertyColumn Property="x => x.Data" Title="Data" Sortable="false" Filterable="false" />
+                        <PropertyColumn Property="x => x.UserNome" Title="Usuário" Sortable="false" Filterable="false" />
+                        <TemplateColumn Filterable="false" Sortable="false" Title="Entrada/Saida">
+                            <CellTemplate>
+                                @if (context.Item.Tipo)
+                                {
+                                    <MudIcon Icon="@Icons.Material.Filled.CompareArrows" Color="Color.Success" Title="Entrada"></MudIcon>
+                                }
+                                else
+                                {
+                                    <MudIcon Icon="@Icons.Material.Filled.CompareArrows" Color="Color.Error" Title="Saida"></MudIcon>
+                                }
+                            </CellTemplate>
+                        </TemplateColumn>
+                        <PropertyColumn Property="x => x.MetodoNome" Title="Método" Sortable="false" Filterable="false" />
+                        <PropertyColumn Property="x => x.Valor" Title="Preço de venda" Sortable="false" Filterable="false" Format="C" />
+                    </Columns>
+                </MudDataGrid>
+                <MudButton OnClick="FecharModalDeTransacoes" Class="mx-3 my-3" Variant="Variant.Filled" Color="Color.Info">OK</MudButton>
+                    @if (baixando)
+                    {
+                        <MudProgressCircular Class="mb-1 ms-1" Color="Color.Info" Size="Size.Small" Indeterminate="true" />
+                    }
+                    else
+                    {
+                        <MudIconButton OnClick="ImprimirTransacoes" Color="Color.Info" Icon="@Icons.Material.Filled.FileDownload" aria-label="Bixar transações"></MudIconButton>
+                    }
+                </div>
+        </div>
+    </div>
+}
+@* ----------------------------------------------- *@
+
+
+<MudPaper Elevation="0" Class="my-3">
+    <MudGrid Justify="Justify.Center">
+        <MudItem xs="12" sm="4" Class="mx-2">
+            <MudDatePicker PickerVariant="PickerVariant.Dialog" Color="Color.Tertiary" Label="Data Inicial" @bind-Date="dataInicial" />
+        </MudItem>
+        <MudItem xs="12" sm="4" Class="mx-2">
+            <MudDatePicker PickerVariant="PickerVariant.Dialog" Color="Color.Tertiary" Label="Data Final" @bind-Date="dataFinal" />
+        </MudItem>
+        <MudItem xs="2" sm="2" Class="mx-2">
+            <MudButton OnClick="FiltrarPorData" Variant="Variant.Filled">Buscar</MudButton>
+        </MudItem>
+    </MudGrid>
+    <MudDataGrid T="Caixa" Items="@caixas" Filterable="true">
+        <ToolBarContent>
+            <MudText Typo="Typo.h6">Transações</MudText>
+        </ToolBarContent>
+        <Columns>
+            <PropertyColumn Property="x => x.DataDeAbertura" Title="Abertto em"  Filterable="false" />
+            <PropertyColumn Property="x => x.DataDeFechamento" Title="Fechado em" Filterable="false" />
+            <PropertyColumn Property="x => x.Total" Title="Total" Sortable="false" Filterable="false" Format="C" />
+            <TemplateColumn Filterable="false" Sortable="false" Title="Aberto/Fechado">
+                <CellTemplate>
+                    @if (context.Item.Estado)
+                    {
+                        <MudIcon Icon="@Icons.Material.Filled.CheckCircleOutline" Color="Color.Success" Title="Aberto" />
+                    }
+                    else
+                    {
+                        <MudIcon Icon="@Icons.Material.Filled.Block" Color="Color.Error" Title="Fechado" />
+                    }
+                </CellTemplate>
+            </TemplateColumn>
+            <TemplateColumn Filterable="false" Sortable="false" Title="Vizualizar">
+                <CellTemplate>
+                    @if (context.Item.Estado)
+                    {
+                        <MudIconButton Disabled="true" Icon="@Icons.Material.Outlined.CompareArrows" Title="Transações" />
+                        <MudIconButton Disabled="true" Color="Color.Info" Icon="@Icons.Material.Outlined.RemoveRedEye" Title="Apuração" />
+                        <MudIconButton Disabled="true" Color="Color.Tertiary" Icon="@Icons.Material.Outlined.Recycling" Title="Reabrir" />
+                    }
+                    else
+                    {
+                        <MudIconButton OnClick="() => AbrirModalDeTransacoes(context.Item)" Color="Color.Info" Icon="@Icons.Material.Outlined.CompareArrows" Title="Transações" />
+                        <MudIconButton OnClick="() => AbrirModalDeApuracao(context.Item.Total, context.Item)" Color="Color.Info" Icon="@Icons.Material.Outlined.RemoveRedEye" Title="Apuração" />
+                        @if (userRoles.Contains("EasyAdmin") || userRoles.Contains("Admin") || userRoles.Contains("reabrirCaixa"))
+                        {
+                            <MudIconButton OnClick="() => AbrirModalDeConfirmacao(context.Item,(int)0)" Color="Color.Tertiary" Icon="@Icons.Material.Outlined.Recycling" Title="Reabrir" />
+                        }
+                        else
+                        {
+                            <MudIconButton Disabled="true" Color="Color.Tertiary" Icon="@Icons.Material.Outlined.Recycling" Title="Reabrir" />
+                        }
+                    }
+                </CellTemplate>
+            </TemplateColumn>
+        </Columns>
+    </MudDataGrid>
+</MudPaper>
+}
+@code {
+    public bool carregando = true;
+    public bool baixando = false;
+    private List<string> userRoles = new List<string>();
+    ModalDeConfirmacao modalConfirmacao;
+    public string CorpoModalConfirmacao { get; set; }
+    public string tituloModalConfirmacao { get; set; }
+    Caixa Caixa = null;
+
+    public bool modalTransacoes = false;
+    public bool modalApuracao = false;
+    public decimal? total = 0;
+    public decimal totalInformado = 0;
+
+    public DateTime? dataInicial = DateTime.Today;
+    public DateTime? dataFinal = DateTime.Today;
+
+    public List<Caixa> caixas = new List<Caixa>();
+    public List<FechamentoCaixa> fechamentos = new List<FechamentoCaixa>();
+    public List<Transacao> transacoes = new List<Transacao>();
+
+    public async Task AbrirModalDeApuracao(decimal? totalDoCaixa, Caixa caixa)
+    {
+        totalInformado = 0;
+        fechamentos = await CaixaServices.GetAllFechamentos(caixa);
+        total = totalDoCaixa;
+        modalApuracao = true;
+        foreach (var item in fechamentos)
+        {
+            totalInformado += item.ValorInformado;
+        }
+    }
+
+    public async Task AbrirModalDeTransacoes(Caixa caixa)
+    {
+        transacoes = await TransacaoServices.GetAllTrasacoesAsync(caixa);
+        modalTransacoes = true;
+    }
+
+    public void FecharModalDeApuracao() => modalApuracao = false;
+
+    public void FecharModalDeTransacoes() => modalTransacoes = false;
+
+    public async Task FiltrarPorData()
+    {
+        var inicial = dataInicial;
+        var final = dataFinal;
+        caixas = await CaixaServices.ObterPorData(inicial, final);
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        caixas = await CaixaServices.GetAllCaixas();
+        carregando = true;
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+        bool usuarioAtivo = await UsuarioServices.GetUsuarioAtivo();
+        if (!usuarioAtivo) NavigationManager.NavigateTo("/pagamento");
+
+        if (user != null && user.Identity != null && user.Identity.IsAuthenticated)
+        {
+            if (user.Identity is ClaimsIdentity claimsIdentity)
+            {
+                var roleClaims = claimsIdentity.FindAll(ClaimTypes.Role);
+                userRoles = roleClaims.Select(c => c.Value).ToList();
+            }
+        }
+        carregando = false;
+    }
+
+    async Task AbrirModalDeConfirmacao(Caixa caixa, int opcao)
+    {
+        Caixa = await CaixaServices.GetCaixaAberto();
+        if (Caixa == null)
+        { 
+            if (opcao == 0)
+            {
+                Caixa = caixa;
+                CorpoModalConfirmacao = "Deseja mesmo Reabrir este Caixa?";
+                tituloModalConfirmacao = "Reabrir Caixa";
+            }
+            modalConfirmacao.Exibir();
+        }
+        else
+        {
+            toastService.ShowError("Para reabrir um caixa nenhum caixa pade estar aberto no momento.");
+        }
+    }
+
+    public void FecharModalDeConfirmacao() => modalConfirmacao.Ocultar();
+
+    public async Task ReabrirCaixa()
+    {
+        await CaixaServices.ReabrirCaixa(Caixa);
+        FecharModalDeConfirmacao();
+        toastService.ShowSuccess("Caixa reaberto com sucesso.");
+    }
+    public async Task ImprimirApuracao()
+    {
+        baixando = true;
+        byte[] bytesDoRelatorio = await CaixaServices.GerarRelatorioApuracao(fechamentos);
+        string nomeDoArquivo = "Apuração.pdf";
+
+        // Tipo de arquivo para indicar ao navegador que é um PDF
+        string tipoDoArquivo = "application/pdf";
+
+        // Criar o stream de bytes para o arquivo
+        await JSRuntime.InvokeAsync<object>("saveAsFile", nomeDoArquivo, bytesDoRelatorio, tipoDoArquivo);
+        baixando = false;
+    }
+
+    public async Task ImprimirTransacoes()
+    {
+        baixando = true;
+        byte[] bytesDoRelatorio = await CaixaServices.GerarRelatorioTransaoes(transacoes);
+        string nomeDoArquivo = "transacoes.pdf";
+
+        // Tipo de arquivo para indicar ao navegador que é um PDF
+        string tipoDoArquivo = "application/pdf";
+
+        await JSRuntime.InvokeAsync<object>("saveAsFile", nomeDoArquivo, bytesDoRelatorio, tipoDoArquivo);
+        baixando = false;
+    }
+}

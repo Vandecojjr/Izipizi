@@ -1,0 +1,46 @@
+﻿@rendermode InteractiveServer
+@inject IUsuarioServices UsuarioServices
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject NavigationManager NavigationManager
+
+
+<MudNavMenu  Color="Color.Info" Bordered="true" Class="mud-width-full">
+
+    <AuthorizeView Roles="EasyAdmin,Admin,dashboard">
+         <Authorized>
+            <MudNavLink Href="dashboard" Icon="@Icons.Material.Filled.Dashboard"><h5>Dashboard</h5></MudNavLink>
+        </Authorized>
+    </AuthorizeView>
+    <AuthorizeView Roles="EasyAdmin,Admin,vendas">
+         <Authorized>
+            <MudNavLink Href="venda" Icon="@Icons.Material.Filled.PointOfSale"><h5>Vendas</h5></MudNavLink>
+         </Authorized>
+    </AuthorizeView>
+    <AuthorizeView Roles="EasyAdmin,Admin,caixa">
+         <Authorized>
+            <MudNavLink Href="caixa" Icon="@Icons.Material.Filled.AttachMoney"><h5>Caixa</h5></MudNavLink>
+        </Authorized>
+    </AuthorizeView>
+    <AuthorizeView Roles="EasyAdmin,Admin,produtos">
+         <Authorized>
+            <MudNavLink Href="produtos" Icon="@Icons.Material.Filled.Archive"><h5>Produtos</h5></MudNavLink>
+        </Authorized>
+    </AuthorizeView>
+    <AuthorizeView Roles="EasyAdmin,Admin,categorias">
+         <Authorized>
+            <MudNavLink Href="categorias" Icon="@Icons.Material.Filled.ContentPaste"><h5>Categorias</h5></MudNavLink>
+        </Authorized>
+    </AuthorizeView>
+    <AuthorizeView Roles="EasyAdmin,Admin,Configuracao">
+         <Authorized>
+            <MudNavLink Href="configuracoes" Icon="@Icons.Material.Filled.Settings"><h5>Configurações</h5></MudNavLink>
+        </Authorized>
+    </AuthorizeView>
+    <AuthorizeView Roles="EasyAdmin">
+        <Authorized>
+            <MudNavLink Href="gerenciamento" Icon="@Icons.Material.Filled.AccountBalance"><h5>Painel Easy</h5></MudNavLink>
+        </Authorized>
+    </AuthorizeView>
+</MudNavMenu>
+
+

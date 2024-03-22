@@ -1,0 +1,275 @@
+﻿@inject IToastService toastService
+@using Blazored.Toast.Configuration
+@using Blazored.Typeahead
+@attribute [StreamRendering]
+@inject IVendaServices Vendaservises
+@inject IProdutoVendidoServices ProdutoVendidoServices
+@inject IFormaDePagamentoServices FormaDePagamentoServices
+@inject IMetodoDePagamentoServices MetodosServices
+@inject ICaixaServices CaixaServices
+@inject IJSRuntime JSRuntime
+@inject NavigationManager NavigationManager
+@inject IUsuarioServices UsuarioServices
+
+@using Microsoft.AspNetCore.Authorization
+@using System.Security.Claims
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+<BlazoredToasts Position="ToastPosition.TopRight"
+                Timeout="5"
+                IconType="IconType.Material"
+                InfoIcon="school"
+                WarningIcon="warning" />
+
+
+@if (carregando)
+{
+    <MudProgressLinear Color="Color.Info" Indeterminate="true"/>
+}
+else
+{
+@* Modal de informações sobre a venda *@
+
+@if (modalAberto)
+{
+    <div class="modal-backdrop show"></div>
+    <div class="modal" tabindex="-1" role="dialog"
+         arial-hidden="true" style="display:block;">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h6 class="modal-title"></h6>
+                </div>
+                <div class="modal-body">
+                    <h6>Produtos</h6>
+                    <MudPaper Elevation="0" Style="background:#B3E5FC;" Class="d-flex my-2">
+                        <MudSpacer />
+                        <h6 >Qtd</h6>
+                        <MudSpacer />
+                        <h6 >Nome</h6>
+                        <MudSpacer />
+                        <h6 >desconto</h6>
+                        <MudSpacer />
+                    </MudPaper>
+                    @foreach (var item in produtosVendidos)
+                    {
+                        <MudPaper Class="d-flex my-1">
+                            <MudSpacer/>
+                            <h6>@item.Quantidade</h6>
+                            <MudSpacer />
+                            <h6>@item.Nome</h6>
+                            <MudSpacer />
+                            <h6>@item.Desconto</h6>
+                            <MudSpacer />
+                        </MudPaper>
+                    }
+                    <h6>Formas de pagamento</h6>
+                    <MudPaper Elevation="0" Style="background:#B3E5FC;" Class="d-flex my-2">
+                        <MudSpacer />
+                        <h6 >Nome</h6>
+                        <MudSpacer />
+                        <h6 >Valor</h6>
+                        <MudSpacer />
+                    </MudPaper>
+                    @foreach (var item in formasDePagamento)
+                    {
+                        <MudPaper Class="d-flex my-1">
+                            <MudSpacer />
+                            <h6>@item.NomeDoMetodo</h6>
+                            <MudSpacer />
+                            <h6>@item.Valor</h6>
+                            <MudSpacer />
+                        </MudPaper>
+                    }
+                </div>
+                <div class="modal-footer">
+                    @* <MudButton Class="mx-3"  Variant="Variant.Filled" Color="Color.Info">Ok</MudButton> *@
+                    <MudButton OnClick="AbrirOuFecharModal" Variant="Variant.Filled">Cancelar</MudButton>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@*------------------------------------ *@
+
+@* Modal de Confirmacao de exclusão da venda *@
+
+@if (modalDeConfirmacaoAberto)
+{
+    <div class="modal-backdrop show"></div>
+    <div class="modal" tabindex="-1" role="dialog"
+         arial-hidden="true" style="display:block;">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h6 class="modal-title">Cancelar venda</h6>
+                </div>
+                <div class="modal-body">
+                    <label>Selecione o metodo de devolução do valor.</label>
+                    <InputSelect id="metodo" class="form-control" @bind-Value="metodoId">
+                        @if (metodos != null)
+                        {
+                            @foreach (var item in metodos)
+                            {
+                                <option value="@item.Id">@item.Nome</option>
+                            }
+                        }
+                    </InputSelect>
+                </div>
+                <div class="modal-footer">
+                    <MudButton OnClick="CancelarVenda" Class="mx-3" Variant="Variant.Filled" Color="Color.Error">Deletar</MudButton>
+                    <MudButton OnClick="FecharModalDeConfirmacao" Variant="Variant.Filled">Cancelar</MudButton>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@*------------------------------------ *@
+
+<MudPaper Elevation="0" Class="my-3">
+<MudGrid Justify="Justify.Center" Class="mb-2">
+    <MudItem xs="4" sm="4" Class="mx-2">
+            <MudDatePicker PickerVariant="PickerVariant.Dialog" Color="Color.Tertiary" Label="Data Inicial" @bind-Date="dataInicial" />
+    </MudItem>
+    <MudItem xs="4" sm="4" Class="mx-2">
+            <MudDatePicker PickerVariant="PickerVariant.Dialog" Color="Color.Tertiary" Label="Data Final" @bind-Date="dataFinal" />
+    </MudItem>
+    <MudItem xs="12" sm="2" Class="mx-2 d-flex justify-content-center">
+        <MudButton OnClick="FiltrarPorData" Variant="Variant.Filled">Buscar</MudButton>
+                @if (baixando)
+                {
+                    <MudProgressCircular Class="mb-1 ms-1" Color="Color.Info" Size="Size.Small" Indeterminate="true" />
+                }
+                else
+                {
+                    <MudIconButton OnClick="ImprimirVendas" Class="ms-3" Color="Color.Info" Icon="@Icons.Material.Filled.FileDownload" aria-label="Bixar vendas"></MudIconButton>
+                }
+    </MudItem>
+</MudGrid>
+<MudDataGrid T="Venda" Filterable="true" Hideable="true" Items="@vendas">
+    <Columns>
+        <PropertyColumn Property="x => x.Numero" Title="N° da venda" Sortable="false" Filterable="false" />
+        <PropertyColumn Property="x => x.Total" Sortable="false" Filterable="false" Format="C" />
+        <PropertyColumn Property="x => x.Descontos" Sortable="false" Filterable="false" Format="C" />
+        <PropertyColumn Property="x => x.NomeDoUsuario" Title="Vendedor" Sortable="false" Filterable="false" />
+        <PropertyColumn Property="x => x.NomeDoCliente" Title="Cliente" Sortable="false" Filterable="false" />
+        <PropertyColumn Property="x => x.DataDaVenda" Title="Data" Filterable="false"  />
+        <TemplateColumn Filterable="false" Sortable="false" CellClass="d-flex justify-end">
+            <CellTemplate>
+                <MudIconButton OnClick="() => CarregarConteudoModal(context.Item)" Color="Color.Info" Icon="@Icons.Material.Outlined.RemoveRedEye" />
+                    @if (caixaAtual != null && context.Item.Caixa == caixaAtual)
+                    {
+                        @if (userRoles.Contains("EasyAdmin") || userRoles.Contains("Admin") || userRoles.Contains("cacelarVenda"))
+                        {
+                            <MudIconButton OnClick="() => AbrirModalDeConfirmacao(context.Item.Id)" Color="Color.Error" Icon="@Icons.Material.Outlined.Delete" />
+                        }
+                        else
+                        {
+                            <MudIconButton Disabled="true" Color="Color.Error" Icon="@Icons.Material.Outlined.Delete" />
+                        }
+                       
+                    }
+            </CellTemplate>
+        </TemplateColumn>
+    </Columns>
+</MudDataGrid>
+</MudPaper>
+}
+
+@code{
+    public bool carregando = true;
+    public bool baixando = false;
+    private Caixa caixaAtual = null;
+    DateTime data = DateTime.Today;
+    private bool modalAberto = false;
+    private bool modalDeConfirmacaoAberto = false;
+    private Guid metodoId { get; set; }
+    private Guid vendaId { get; set; }
+
+
+    public DateTime? dataInicial = DateTime.Today;
+    public DateTime? dataFinal = DateTime.Today;
+
+    private List<string> userRoles = new List<string>();
+    private List<MetodoDePagamento> metodos = new List<MetodoDePagamento>();
+    private List<Venda> vendas = new List<Venda>();
+    private List<ProdutoVendido> produtosVendidos = new List<ProdutoVendido>();
+    private List<FormaDePagamento> formasDePagamento = new List<FormaDePagamento>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        bool usuarioAtivo = await UsuarioServices.GetUsuarioAtivo();
+        if (!usuarioAtivo) NavigationManager.NavigateTo("/pagamento");
+        carregando = true;
+        caixaAtual = await CaixaServices.GetCaixaAberto();
+        metodos = await MetodosServices.GetAllMetodosAsync();
+        metodos = metodos.Where(x => x.Nome != "Aprazo").ToList();
+        vendas = await Vendaservises.GetAllVendasAsync();
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        if (user != null && user.Identity != null && user.Identity.IsAuthenticated)
+        {
+            if (user.Identity is ClaimsIdentity claimsIdentity)
+            {
+                var roleClaims = claimsIdentity.FindAll(ClaimTypes.Role);
+                userRoles = roleClaims.Select(c => c.Value).ToList();
+            }
+        }
+        carregando = false;
+    }
+    async Task CancelarVenda()
+    {
+        if(metodoId == Guid.Empty)
+        {
+            toastService.ShowError("Selecione um metodo De devolução.");
+        }
+        else
+        {
+            await Vendaservises.DeleteVendaAsync((Guid)vendaId,(Guid)metodoId);
+            vendas = await Vendaservises.GetAllVendasAsync();
+            modalDeConfirmacaoAberto = !modalDeConfirmacaoAberto;
+            StateHasChanged();
+        }
+    }
+
+    private void AbrirOuFecharModal() => modalAberto = !modalAberto;
+
+    private void AbrirModalDeConfirmacao(Guid idVenda)
+    {
+        vendaId = idVenda;
+        modalDeConfirmacaoAberto = !modalDeConfirmacaoAberto;
+    }
+
+    private void FecharModalDeConfirmacao() => modalDeConfirmacaoAberto = !modalDeConfirmacaoAberto;
+
+    private async Task CarregarConteudoModal(Venda venda)
+    {
+        produtosVendidos = await ProdutoVendidoServices.GetProdutosVendidosAsync(venda);
+        formasDePagamento = await FormaDePagamentoServices.GetFormaDePagamentos(venda);
+        AbrirOuFecharModal();
+    }
+
+    public async Task FiltrarPorData()
+    {
+        var inicial = dataInicial;
+        var final = dataFinal;
+        vendas = await Vendaservises.ObterVendasPorDataAsync(inicial, final);
+    }
+
+    public async Task ImprimirVendas()
+    {
+        baixando = true;
+        byte[] bytesDoRelatorio = await Vendaservises.GerarRelatorioVendas(vendas);
+        string nomeDoArquivo = "vendas.pdf";
+
+        // Tipo de arquivo para indicar ao navegador que é um PDF
+        string tipoDoArquivo = "application/pdf";
+
+        await JSRuntime.InvokeAsync<object>("saveAsFile", nomeDoArquivo, bytesDoRelatorio, tipoDoArquivo);
+        baixando = false;
+    }
+}
+

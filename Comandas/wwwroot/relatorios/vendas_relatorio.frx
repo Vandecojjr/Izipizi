@@ -1,0 +1,43 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Report ScriptLanguage="CSharp" ReportInfo.Created="03/06/2024 14:00:13" ReportInfo.Modified="03/06/2024 14:08:06" ReportInfo.CreatorVersion="2024.1.3.0">
+  <Dictionary>
+    <BusinessObjectDataSource Name="vendas" ReferenceName="vendas" DataType="System.Int32" Enabled="true">
+      <Column Name="Numero" DataType="System.Int32"/>
+      <Column Name="Total" DataType="System.Decimal"/>
+      <Column Name="Descontos" DataType="System.Int32"/>
+      <Column Name="NomeDoUsuario" DataType="System.String"/>
+      <Column Name="NomeDoCliente" DataType="System.String"/>
+      <Column Name="Lucro" DataType="System.Int32"/>
+      <Column Name="Data" DataType="System.DateTime"/>
+    </BusinessObjectDataSource>
+  </Dictionary>
+  <ReportPage Name="Page1" Watermark.Font="Arial, 60pt">
+    <ReportTitleBand Name="ReportTitle1" Width="718.2" Height="37.8">
+      <TextObject Name="Text15" Width="217.35" Height="37.8" Text="Relatório de vendas" Font="Roboto Bk, 16pt"/>
+      <TextObject Name="Text16" Left="415.8" Top="18.9" Width="302.4" Height="18.9" Text="[Date]" Format="Date" Format.Format="D" Font="Roboto Cn, 9pt"/>
+    </ReportTitleBand>
+    <PageHeaderBand Name="PageHeader1" Top="41.8" Width="718.2" Height="28.35" Fill.Color="LightGray">
+      <TextObject Name="Text2" Top="9.45" Width="75.6" Height="18.9" Text="N°" HorzAlign="Center" Font="Roboto Bk, 10pt"/>
+      <TextObject Name="Text4" Left="85.05" Top="9.45" Width="75.6" Height="18.9" Text="Total" HorzAlign="Center" Font="Roboto Bk, 10pt"/>
+      <TextObject Name="Text6" Left="170.1" Top="9.45" Width="75.6" Height="18.9" Text="Descontos" HorzAlign="Center" Font="Roboto Bk, 10pt"/>
+      <TextObject Name="Text8" Left="255.15" Top="9.45" Width="85.05" Height="18.9" Text="Lucro" HorzAlign="Center" Font="Roboto Bk, 10pt"/>
+      <TextObject Name="Text10" Left="349.65" Top="9.45" Width="141.75" Height="18.9" Text="Vendedor" HorzAlign="Center" Font="Roboto Bk, 10pt"/>
+      <TextObject Name="Text12" Left="500.85" Top="9.45" Width="94.5" Height="18.9" Text="Cliente" HorzAlign="Center" Font="Roboto Bk, 10pt"/>
+      <TextObject Name="Text14" Left="604.8" Top="9.45" Width="113.4" Height="18.9" Text="Data" HorzAlign="Center" Font="Roboto Bk, 10pt"/>
+    </PageHeaderBand>
+    <DataBand Name="Data1" Top="74.15" Width="718.2" Height="37.8" DataSource="vendas">
+      <TextObject Name="Text1" Top="9.45" Width="75.6" Height="18.9" Text="[vendas.Numero]" HorzAlign="Center" Font="Roboto Cn, 7pt"/>
+      <TextObject Name="Text3" Left="85.05" Top="9.45" Width="75.6" Height="18.9" Text="[vendas.Total]" Format="Currency" Format.UseLocale="true" Format.DecimalDigits="2" HorzAlign="Center" WordWrap="false" Font="Roboto Cn, 7pt" Trimming="EllipsisCharacter"/>
+      <TextObject Name="Text5" Left="170.1" Top="9.45" Width="75.6" Height="18.9" Text="[vendas.Descontos]" Format="Currency" Format.UseLocale="true" Format.DecimalDigits="2" HorzAlign="Center" Font="Roboto Cn, 7pt"/>
+      <TextObject Name="Text7" Left="255.15" Top="9.45" Width="85.05" Height="18.9" Text="[vendas.Lucro]" Format="Currency" Format.UseLocale="true" Format.DecimalDigits="2" HorzAlign="Center" Font="Roboto Cn, 7pt"/>
+      <TextObject Name="Text9" Left="349.65" Top="9.45" Width="141.75" Height="18.9" Text="[vendas.NomeDoUsuario]" HorzAlign="Center" Font="Roboto Cn, 7pt"/>
+      <TextObject Name="Text11" Left="500.85" Top="9.45" Width="94.5" Height="18.9" Text="[vendas.NomeDoCliente]" HorzAlign="Center" Font="Roboto Cn, 7pt"/>
+      <TextObject Name="Text13" Left="604.8" Top="9.45" Width="113.4" Height="18.9" Text="[vendas.Data]" Format="Date" Format.Format="d" HorzAlign="Center" Font="Roboto Cn, 7pt"/>
+      <LineObject Name="Line2" Left="718.2" Width="-718.2"/>
+    </DataBand>
+    <PageFooterBand Name="PageFooter1" Top="115.95" Width="718.2" Height="18.9">
+      <TextObject Name="Text17" Left="226.8" Width="198.45" Height="18.9" Text="vendas.izipizi.site" Font="Roboto Cn, 9pt"/>
+      <LineObject Name="Line1" Left="718.2" Width="-718.2"/>
+    </PageFooterBand>
+  </ReportPage>
+</Report>

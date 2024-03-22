@@ -1,0 +1,192 @@
+﻿@rendermode InteractiveServer
+@attribute [StreamRendering]
+@inject IProdutoServices ProdutoServices
+@inject IToastService toastService
+@using Blazored.Toast.Configuration
+@using Blazored.Typeahead
+@inject NavigationManager NavigationManager
+@inject IUsuarioServices UsuarioServices
+
+
+<BlazoredToasts Position="ToastPosition.TopRight"
+                Timeout="5"
+                IconType="IconType.Material"
+                InfoIcon="school"
+                WarningIcon="warning" />
+
+@if (carregando)
+{
+    <MudProgressLinear Color="Color.Info" Indeterminate="true" />
+}
+else
+{
+
+<MudPaper Class="p-3 mb-3">
+    <MudGrid>
+        <MudItem sm="12" xl="12" md="12">
+            <InputSelect @bind-Value="tag" class="form-control">
+                <option selected>Selecione uma tag</option>
+                <option value="2">Perda</option>
+                <option value="1">Compra</option>
+                <option value="0">Outro</option>
+            </InputSelect>
+        </MudItem>
+        <MudItem sm="8" xs="12">
+            <h5>Produto</h5>
+            <MudFocusTrap Disabled="false" DefaultFocus="DefaultFocus.FirstChild">
+            <BlazoredTypeahead SearchMethod="buscar" @bind-Value="produtoSelecionado">
+                <SelectedTemplate>
+                    Cod @context.Codigo ------- @context.Nome
+                </SelectedTemplate>
+                <ResultTemplate>
+                    Cod @context.Codigo ------- @context.Nome
+                </ResultTemplate>
+            </BlazoredTypeahead>
+            </MudFocusTrap>
+        </MudItem>
+        <MudItem sm="1" xs="6">
+            <h5>Quantidade</h5>
+            <InputNumber class="form-control" @bind-Value="quantidade"></InputNumber>
+        </MudItem>
+        @if (tag == 0)
+        {
+            <MudItem sm="1">
+                <MudSwitch Class="ms-10 mt-6" @bind-Value="adicionarOuRemover" Label="Entrada" Color="Color.Success" />
+            </MudItem>
+        }
+        @if (tag == 1)
+        {
+            <MudItem sm="1">
+                <h5>Custo</h5>
+                <InputNumber class="form-control" @bind-Value="CustoNovo"></InputNumber>
+            </MudItem>
+        }
+        <MudItem>
+            <MudButton OnClick="AddNaFila" Class="mt-6 ms-6" Color="Color.Success">Lançar</MudButton>
+        </MudItem>
+          
+    </MudGrid>
+</MudPaper>
+
+<MudButton OnClick="SalvarAlteracoes" Class="mb-3" Variant="Variant.Filled" Color="Color.Success" FullWidth="true">Salvar</MudButton>
+
+            <MudDataGrid T="ProdutoAlterado" Filterable="true" Hideable="true" Items="@ProdutosAlterados">
+                <Columns>
+                    <PropertyColumn Property="x => x.Nome" Title="Nome" Sortable="false" Filterable="false" />
+                    <PropertyColumn Property="x => x.Quantidade" Title="Qtd." Sortable="false" Filterable="false" />
+                    <TemplateColumn Filterable="false" Sortable="false" Title="Entrada/Saida">
+                        <CellTemplate>
+                            @if (context.Item.Alterar)
+                            {
+                                <MudIcon Icon="@Icons.Material.Filled.Add" Color="Color.Success" Title="Ativo" />
+                            }
+                            else
+                            {
+                                <MudIcon Icon="@Icons.Material.Filled.Remove" Color="Color.Error" Title="Inativo" />
+                            }
+                        </CellTemplate>
+                    </TemplateColumn>
+                    <TemplateColumn Filterable="false" Sortable="false" CellClass="d-flex justify-end">
+                        <CellTemplate>
+                            <MudIconButton OnClick="() => RemoverDaFila(context.Item)" Color="Color.Error" Icon="@Icons.Material.Outlined.Delete" />
+                        </CellTemplate>
+                    </TemplateColumn>
+                </Columns>
+            </MudDataGrid>
+}
+@code {
+    public bool carregando = true;
+    private Produto produtoSelecionado = null;
+    private ProdutoAlterado produtoParaFila = new();
+    private int quantidade { get; set; }
+    private bool adicionarOuRemover = true; // true Adiciona
+    private decimal CustoNovo { get; set; }
+    private int tag { get; set; }
+    
+
+    List<Produto> Produtos = new List<Produto>();
+    List<ProdutoAlterado> ProdutosAlterados = new List<ProdutoAlterado>();
+
+
+    public class ProdutoAlterado
+    {
+        public Guid Id { get; set; }
+        public string Nome { get; set; }
+        public int Quantidade { get; set; }
+        public bool Alterar { get; set; }
+        public LogPrecoProduto log = new();
+
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        bool usuarioAtivo = await UsuarioServices.GetUsuarioAtivo();
+        if (!usuarioAtivo) NavigationManager.NavigateTo("/pagamento");
+        carregando = true;
+        Produtos = await ProdutoServices.GetAllProdutosAsync();
+        carregando = false;
+
+    }
+
+    private async Task<IEnumerable<Produto>> buscar(string value)
+    {
+        return await Task.FromResult(Produtos.Where(x => x.IsActive && (x.Nome.ToLower().Contains(value.ToLower()) || x.Codigo.ToString().ToLower().Contains(value))).ToList());
+    }
+
+    private void AddNaFila()
+    {
+        if (tag == 0)
+        {
+            produtoParaFila.Alterar = adicionarOuRemover;
+            produtoParaFila.log.Tag = "outro";
+        }
+        else if (tag == 1)
+        {
+            produtoParaFila.Alterar = true;
+            produtoParaFila.log.Tag = "compra";
+        }
+        else
+        {
+            produtoParaFila.Alterar = false;
+            produtoParaFila.log.Tag = "perda";
+        }
+
+        produtoParaFila.Nome = produtoSelecionado.Nome;
+        produtoParaFila.Id = produtoSelecionado.Id;
+        produtoParaFila.Quantidade = quantidade;
+        produtoParaFila.log.IdProduto = produtoSelecionado.Id;
+        produtoParaFila.log.Custo = CustoNovo;
+        produtoParaFila.log.NomeProduto = produtoParaFila.Nome;
+        produtoParaFila.log.Quantidade = produtoParaFila.Quantidade;
+
+        if (quantidade <= 0 || quantidade == null) toastService.ShowError("A quantidade deve ser maior que ZERO");
+        else ProdutosAlterados.Add(produtoParaFila);
+
+        produtoParaFila = new();
+    }
+
+    private void RemoverDaFila(ProdutoAlterado produto)
+    {
+        ProdutosAlterados.Remove(produto);
+    }
+
+    private async Task SalvarAlteracoes()
+    {
+        foreach (var item in ProdutosAlterados)
+        {
+            var produto = await ProdutoServices.GetProdutosByIdAsync(item.Id);
+            if (item.Alterar)
+            {
+                produto.Quantidade += item.Quantidade;
+            }
+            else
+            {
+                produto.Quantidade -= item.Quantidade;
+            }
+            await ProdutoServices.UpdateProdutoAsync(produto, true);
+            await ProdutoServices.GravaLogProduto(item.log);
+        }
+        ProdutosAlterados.Clear();
+        toastService.ShowSuccess("Produtos Alterados Com sucesso");
+    }
+}

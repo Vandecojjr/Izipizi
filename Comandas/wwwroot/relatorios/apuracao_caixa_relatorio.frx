@@ -1,0 +1,44 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Report ScriptLanguage="CSharp" ReportInfo.Created="03/06/2024 11:04:16" ReportInfo.Modified="03/06/2024 12:34:45" ReportInfo.CreatorVersion="2024.1.3.0">
+  <Dictionary>
+    <BusinessObjectDataSource Name="fechamentos" ReferenceName="fechamentos" DataType="System.Int32" Enabled="true">
+      <Column Name="NomeMetodo" DataType="System.String"/>
+      <Column Name="ValorApurado" DataType="System.Decimal"/>
+      <Column Name="ValorInformado" DataType="System.Decimal"/>
+      <Column Name="ValorDiferenca" DataType="System.Decimal"/>
+    </BusinessObjectDataSource>
+    <Total Name="TotalApurado" Expression="[fechamentos.ValorApurado]" Evaluator="Data1"/>
+    <Total Name="TotalInformado" Expression="[fechamentos.ValorInformado]" Evaluator="Data1"/>
+    <Total Name="TotalDiferenca" Expression="[fechamentos.ValorDiferenca]" Evaluator="Data1"/>
+  </Dictionary>
+  <ReportPage Name="Page1" Watermark.Font="Arial, 60pt">
+    <ReportTitleBand Name="ReportTitle1" Width="718.2" Height="28.35">
+      <TextObject Name="Text13" Left="37.8" Top="-9.45" Width="207.9" Height="37.8" Text="Apuração de caixa" Font="Roboto Bk, 16pt"/>
+      <TextObject Name="Text14" Left="519.75" Top="9.45" Width="189" Height="18.9" Text="[Date]" Format="Date" Format.Format="D" Font="Roboto Cn, 10pt"/>
+    </ReportTitleBand>
+    <PageHeaderBand Name="PageHeader1" Top="32.35" Width="718.2" Height="37.8" Fill.Color="Silver">
+      <TextObject Name="Text2" Left="113.4" Top="9.45" Width="94.5" Height="18.9" Text="Método" HorzAlign="Center" Font="Roboto Bk, 10pt"/>
+      <TextObject Name="Text4" Left="217.35" Top="9.45" Width="94.5" Height="18.9" Text="Valor Apurado" HorzAlign="Center" Font="Roboto Bk, 10pt"/>
+      <TextObject Name="Text6" Left="330.75" Top="9.45" Width="113.4" Height="18.9" Text="Valor  informado" Font="Roboto Bk, 10pt"/>
+      <TextObject Name="Text8" Left="453.6" Top="9.45" Width="94.5" Height="18.9" Text="Diferença" HorzAlign="Center" Font="Roboto Bk, 10pt"/>
+    </PageHeaderBand>
+    <DataBand Name="Data1" Top="74.15" Width="718.2" Height="18.9" Guides="56.7,66.15,47.25,56.7,47.25,47.25,37.8,37.8,56.7" DataSource="fechamentos">
+      <TextObject Name="Text1" Left="113.4" Width="94.5" Height="18.9" Text="[fechamentos.NomeMetodo]" Font="Roboto Cn, 10pt"/>
+      <TextObject Name="Text3" Left="217.35" Width="94.5" Height="18.9" Text="[fechamentos.ValorApurado]" Format="Currency" Format.UseLocale="true" Format.DecimalDigits="2" HorzAlign="Right" WordWrap="false" Font="Roboto Cn, 10pt" Trimming="EllipsisCharacter"/>
+      <TextObject Name="Text5" Left="340.2" Width="94.5" Height="18.9" Text="[fechamentos.ValorInformado]" Format="Currency" Format.UseLocale="true" Format.DecimalDigits="2" HorzAlign="Right" WordWrap="false" Font="Roboto Cn, 10pt" Trimming="EllipsisCharacter"/>
+      <TextObject Name="Text7" Left="453.6" Width="94.5" Height="18.9" Text="[fechamentos.ValorDiferenca]" Format="Currency" Format.UseLocale="true" Format.DecimalDigits="2" HorzAlign="Center" WordWrap="false" Font="Roboto Cn, 10pt" Trimming="EllipsisCharacter"/>
+      <LineObject Name="Line9" Left="94.5" Top="18.9" Width="472.5"/>
+    </DataBand>
+    <ReportSummaryBand Name="ReportSummary1" Top="97.05" Width="718.2" Height="37.8">
+      <TextObject Name="Text9" Left="113.4" Top="9.45" Width="94.5" Height="28.35" Text="TOTAL :" Font="Roboto Bk, 16pt"/>
+      <TextObject Name="Text10" Left="217.35" Top="18.9" Width="94.5" Height="18.9" Text="[TotalApurado]" Format="Currency" Format.UseLocale="true" Format.DecimalDigits="2" HorzAlign="Center" Font="Roboto Bk, 10pt"/>
+      <TextObject Name="Text11" Left="340.2" Top="18.9" Width="94.5" Height="18.9" Text="[TotalInformado]" Format="Currency" Format.UseLocale="true" Format.DecimalDigits="2" HorzAlign="Center" Font="Roboto Bk, 10pt"/>
+      <TextObject Name="Text12" Left="453.6" Top="18.9" Width="94.5" Height="18.9" Text="[TotalDiferenca]" Format="Currency" Format.UseLocale="true" Format.DecimalDigits="2" HorzAlign="Center" Font="Roboto Bk, 10pt"/>
+      <LineObject Name="Line8" Left="94.5" Top="37.8" Width="472.5"/>
+    </ReportSummaryBand>
+    <PageFooterBand Name="PageFooter1" Top="138.85" Width="718.2" Height="28.35">
+      <LineObject Name="Line10" Left="718.2" Width="-746.55" Diagonal="true"/>
+      <TextObject Name="Text15" Left="274.05" Top="9.45" Width="113.4" Height="18.9" Text="vendas.izipizi.com" HorzAlign="Center" Font="Roboto Cn, 10pt"/>
+    </PageFooterBand>
+  </ReportPage>
+</Report>

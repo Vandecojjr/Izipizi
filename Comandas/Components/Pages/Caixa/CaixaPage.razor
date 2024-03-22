@@ -1,0 +1,20 @@
+﻿@page "/caixa"
+@rendermode InteractiveServer
+@attribute [Authorize(Roles = "EasyAdmin, Admin, caixa")]
+@inject NavigationManager NavigationManager
+@using Microsoft.AspNetCore.Identity
+
+
+
+<MudTabs Elevation="0" Rounded="true" ApplyEffectsToContainer="false"  SliderColor="Color.Dark">
+    <MudTabPanel Style="color:#065A82;" Text="Caixa Atual">
+        <CaixaAtual></CaixaAtual>
+    </MudTabPanel>
+    <MudTabPanel Style="color:#065A82;" Text="Caixas Anteriores">
+        <CaixasAnteriores></CaixasAnteriores>
+    </MudTabPanel>
+</MudTabs>
+
+@code {
+
+}
