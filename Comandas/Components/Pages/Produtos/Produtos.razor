@@ -95,13 +95,15 @@ else
                     <CellTemplate>
                         @if (userRoles.Contains("EasyAdmin") || userRoles.Contains("Admin") || userRoles.Contains("cadastro/alteracao"))
                         {
+                            <MudIconButton Color="Color.Info" Icon="@Icons.Material.Outlined.QrCode" OnClick="@(() => CodigoDeBarrasIndividual(context.Item))" />
                             <MudIconButton  Color="Color.Info" Icon="@Icons.Material.Outlined.Edit" OnClick="@(() => NavigationManager.NavigateTo($"/novoProduto{context.Item.Id}"))" />
-                             <MudIconButton Color="Color.Error" Icon="@Icons.Material.Outlined.Delete" OnClick="@(() => AbrirModalDeExclusao(context.Item.Id, context.Item.Nome))" />
+                            <MudIconButton Color="Color.Error" Icon="@Icons.Material.Outlined.Delete" OnClick="@(() => AbrirModalDeExclusao(context.Item.Id, context.Item.Nome))" />
                         }
                         else
                         {
-                            <MudIconButton Disabled="true" Color="Color.Info" Icon="@Icons.Material.Outlined.Edit" OnClick="@(() => NavigationManager.NavigateTo($"/novoProduto{context.Item.Id}"))" />
-                            <MudIconButton Disabled="true" Color="Color.Error" Icon="@Icons.Material.Outlined.Delete" OnClick="@(() => AbrirModalDeExclusao(context.Item.Id, context.Item.Nome))" />
+                             <MudIconButton Disabled="true" Color="Color.Info" Icon="@Icons.Material.Outlined.QrCode"/>
+                            <MudIconButton Disabled="true" Color="Color.Info" Icon="@Icons.Material.Outlined.Edit" />
+                            <MudIconButton Disabled="true" Color="Color.Error" Icon="@Icons.Material.Outlined.Delete"/>
                         }
                     </CellTemplate>
                 </TemplateColumn>
@@ -195,6 +197,19 @@ else
         baixando = true;
         byte[] bytesDoRelatorio = await ProdutoServices.GerarRelatorio(produtos, info);
         string nomeDoArquivo = "relatorio.pdf";
+
+        // Tipo de arquivo para indicar ao navegador que é um PDF
+        string tipoDoArquivo = "application/pdf";
+
+        // Criar o stream de bytes para o arquivo
+        await JSRuntime.InvokeAsync<object>("saveAsFile", nomeDoArquivo, bytesDoRelatorio, tipoDoArquivo);
+        baixando = false;
+    }
+    public async Task CodigoDeBarrasIndividual(Produto prod)
+    {
+        baixando = true;
+        byte[] bytesDoRelatorio = await ProdutoServices.GerarCodeDeBarras(prod);
+        string nomeDoArquivo = "CodigoDebarras.pdf";
 
         // Tipo de arquivo para indicar ao navegador que é um PDF
         string tipoDoArquivo = "application/pdf";

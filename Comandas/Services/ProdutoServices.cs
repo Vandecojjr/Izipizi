@@ -105,9 +105,32 @@ namespace Comandas.Services
             }
         }
 
-        public Task<byte[]> GerarCodeDeBarras(List<Produto> produtos)
+        public async Task<byte[]> GerarCodeDeBarras(Produto produto)
         {
-            throw new NotImplementedException();
+            var Freport = new FastReport.Report();
+            List<RelatorioProduto> produtosRelatorios = new List<RelatorioProduto>();
+            RelatorioProduto novoProduto = new();
+            novoProduto.Codigo = produto.Codigo;
+            novoProduto.Nome = produto.Nome;
+            novoProduto.Quantidade = produto.Quantidade;
+            novoProduto.Valor = produto.Valor;
+            novoProduto.ValorDeCusto = produto.ValorDeCusto;
+            novoProduto.MargemLucro = produto.MargemLucro;
+            novoProduto.NomeDaCategoria = produto.NomeDaCategoria;
+            produtosRelatorios.Add(novoProduto);
+
+            var reportFile = Path.Combine(_webHostEnvironment.WebRootPath, @"relatorios\codigo_de_barras_individual.frx");
+            Freport.Load(reportFile);
+            Freport.Report.Dictionary.RegisterBusinessObject(produtosRelatorios, "produtos", 10, true);
+            Freport.Prepare();
+
+            var pdfExport = new PDFSimpleExport();
+            using MemoryStream memory = new MemoryStream();
+
+            pdfExport.Export(Freport, memory);
+            memory.Flush();
+
+            return memory.ToArray();
         }
 
         public async Task<byte[]> GerarRelatorio(List<Produto> produtos, int tipo = 0)
