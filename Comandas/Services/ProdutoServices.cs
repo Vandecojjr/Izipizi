@@ -105,7 +105,12 @@ namespace Comandas.Services
             }
         }
 
-        public async Task<byte[]> GerarRelatorio(List<Produto> produtos)
+        public Task<byte[]> GerarCodeDeBarras(List<Produto> produtos)
+        {
+            throw new NotImplementedException();
+        }
+
+        public async Task<byte[]> GerarRelatorio(List<Produto> produtos, int tipo = 0)
         {
             List<RelatorioProduto> produtosRelatorios = new List<RelatorioProduto>();
             foreach (var item in produtos)
@@ -120,7 +125,14 @@ namespace Comandas.Services
                 novoProduto.NomeDaCategoria = item.NomeDaCategoria;
                 produtosRelatorios.Add(novoProduto);
             }
+
             var reportFile = Path.Combine(_webHostEnvironment.WebRootPath, @"relatorios\produtoRelatorio.frx");
+
+            if (tipo == 1)
+            {
+                reportFile = Path.Combine(_webHostEnvironment.WebRootPath, @"relatorios\codigo_de_barras.frx");
+            }
+
             var Freport = new FastReport.Report();
             Freport.Load(reportFile);
             Freport.Report.Dictionary.RegisterBusinessObject(produtosRelatorios, "produtos", 10, true);

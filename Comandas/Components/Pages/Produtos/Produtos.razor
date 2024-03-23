@@ -52,6 +52,13 @@ else
                 Color="Color.Info">
         Relatorio
         </MudButton>
+        <MudButton OnClick="() => Relatorio(1)"
+                    Class="mx-2"
+                    Variant="Variant.Text"
+                    EndIcon="@Icons.Material.Filled.FileDownload"
+                    Color="Color.Info">
+            Código de barras
+        </MudButton>
                 }
             </div>
     </Authorized>
@@ -183,10 +190,10 @@ else
          return false;
      };
 
-    public async Task Relatorio()
+    public async Task Relatorio(int info = 0)
     {
         baixando = true;
-        byte[] bytesDoRelatorio = await ProdutoServices.GerarRelatorio(produtos);
+        byte[] bytesDoRelatorio = await ProdutoServices.GerarRelatorio(produtos, info);
         string nomeDoArquivo = "relatorio.pdf";
 
         // Tipo de arquivo para indicar ao navegador que é um PDF

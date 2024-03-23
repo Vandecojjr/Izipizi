@@ -13,6 +13,7 @@ namespace Comandas.Services
         Task GravaLogProduto(LogPrecoProduto log);
         Task<List<LogPrecoProduto>> GetAllLogs();
         Task<List<LogPrecoProduto>> GetAllLogsPorPeriodo(DateTime? inicial, DateTime? final);
-        Task<byte[]> GerarRelatorio(List<Produto> produtos);
+        Task<byte[]> GerarRelatorio(List<Produto> produtos, int tipo = 0);
+        Task<byte[]> GerarCodeDeBarras(List<Produto> produtos);
     }
 }

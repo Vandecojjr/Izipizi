@@ -1,0 +1,26 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Report ScriptLanguage="CSharp" ReportInfo.Created="03/23/2024 11:37:04" ReportInfo.Modified="03/23/2024 15:03:53" ReportInfo.CreatorVersion="2024.1.3.0">
+  <Dictionary>
+    <BusinessObjectDataSource Name="produtos" ReferenceName="produtos" DataType="System.Int32" Enabled="true">
+      <Column Name="Codigo" DataType="System.Int32"/>
+      <Column Name="Nome" DataType="System.String"/>
+      <Column Name="Quantidade" DataType="System.Int32"/>
+      <Column Name="Valor" DataType="System.Int32"/>
+      <Column Name="ValorDeCusto" DataType="System.Int32"/>
+      <Column Name="MargemLucro" DataType="System.Int32"/>
+      <Column Name="NomeDaCategoria" DataType="System.String"/>
+    </BusinessObjectDataSource>
+  </Dictionary>
+  <ReportPage Name="Page1" Watermark.Font="Arial, 60pt">
+    <ReportTitleBand Name="ReportTitle1" Width="718.2" Height="37.8"/>
+    <PageHeaderBand Name="PageHeader1" Top="41.8" Width="718.2" Height="47.25">
+      <LineObject Name="Line1" Top="47.25" Width="727.65"/>
+    </PageHeaderBand>
+    <DataBand Name="Data1" Top="93.05" Width="718.2" Height="103.95" DataSource="produtos">
+      <BarcodeObject Name="Barcode1" Left="340.2" Top="37.8" Width="57.5" Height="56.7" DataColumn="produtos.Codigo" Text="" Barcode="Code128" Barcode.AutoEncode="true"/>
+      <TextObject Name="Text1" Left="236.25" Width="255.15" Height="18.9" Text="[produtos.Nome]" HorzAlign="Center" Font="Arial, 10pt"/>
+      <LineObject Name="Line2" Top="103.95" Width="774.9"/>
+    </DataBand>
+    <PageFooterBand Name="PageFooter1" Top="201" Width="718.2" Height="18.9"/>
+  </ReportPage>
+</Report>
