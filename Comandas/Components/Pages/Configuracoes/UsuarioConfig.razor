@@ -3,6 +3,7 @@
 @attribute [StreamRendering]
 @inject IToastService toastService
 @inject IUsuarioServices UsuarioServices
+@inject IVendaServices VendaServices
 @inject NavigationManager NavigationManager
 @using Blazored.Toast.Configuration
 @using Blazored.Typeahead
@@ -24,6 +25,30 @@ else
 <ModalDeConfirmacao @ref="modalConfirmacao" onCancela="() => modalConfirmacao.Ocultar()" onConfirma="() => DeletarUsuario(idUsuarioDeletar)" Titulo="Deletar Usuario">
     Deseja realmente deletar este usuario?
 </ModalDeConfirmacao>
+
+    @if (modalTransacoes)
+    {
+        <div class="modal-backdrop show"></div>
+        <div class="modal" tabindex="-1" role="dialog"
+             arial-hidden="true" style="display:block;">
+            <div class="modal-dialog modal-dialog-centered modal-xl" role="document">
+                <div class="modal-content">
+
+                    <MudDataGrid T="Venda" Filterable="true" Hideable="true" Items="@VendasDoUsuario">
+                        <Columns>
+                            <PropertyColumn Property="x => x.Numero" Title="N° da venda" Sortable="false" Filterable="false" />
+                            <PropertyColumn Property="x => x.Total" Sortable="false" Filterable="false" Format="C" />
+                            <PropertyColumn Property="x => x.Descontos" Sortable="false" Filterable="false" Format="C" />
+                            <PropertyColumn Property="x => x.NomeDoUsuario" Title="Vendedor" Sortable="false" Filterable="false" />
+                            <PropertyColumn Property="x => x.NomeDoCliente" Title="Cliente" Sortable="false" Filterable="false" />
+                            <PropertyColumn Property="x => x.DataDaVenda" Title="Data" Filterable="false" />
+                        </Columns>
+                    </MudDataGrid>
+                    <MudButton OnClick="AbrirOuFecharModal1" Color="Color.Info" Variant="Variant.Filled">OK</MudButton>
+                </div>
+            </div>
+        </div>
+    }
 
 <MudContainer Class="mt-2" MaxWidth="MaxWidth.False">
     <MudGrid>
@@ -86,7 +111,7 @@ else
             </MudPaper>
         </MudItem>
 
-        <MudItem sm="6" xs="12" xl="12" md="6">
+        <MudItem sm="12" xs="12" xl="12" md="6">
             <MudPaper Elevation="2" Class="pa-4">
                 <div class="py-2">
                     <InputSelect class="form-control" @bind-Value="usuarioId">
@@ -109,6 +134,49 @@ else
                 <MudButton OnClick="() => GravarPerfilDoUsuario()">Gravar</MudButton>
             </MudPaper>
         </MudItem>
+
+         <MudItem sm="12" xs="12" xl="12" md="6">
+            <MudPaper Elevation="2" Class="pa-4">
+                <h4 class="d-flex justify-content-center">Comissão</h4>
+                <hr/>
+                    <MudPaper Elevation="0" Class="pa-4 d-flex">
+                        <MudDatePicker Class="mx-2" PickerVariant="PickerVariant.Dialog" Color="Color.Tertiary" @bind-Date="primeiroDiaDoMes" Label="Data Inicial" />
+                        <MudDatePicker Class="mx-2" PickerVariant="PickerVariant.Dialog" Color="Color.Tertiary" @bind-Date="ultimoDiaDoMes" Label="Data Final" />
+                        <MudButton OnClick="BuscaVendas">APLICAR</MudButton>
+                    </MudPaper>
+                <hr/>
+                <div class="table-responsive">
+                    <table class="table">
+                            <thead class="table-light">
+                            <tr>
+                                <th>Nome</th>
+                                <th>Total de vendas</th>
+                                <th>Comissão</th>
+                                <th>% base</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                                @foreach (var item in usuariosCalculos)
+                                {
+                                    <tr>
+                                        <td>@item.Nome</td>
+                                        <td>@item.TotalVendas</td>
+                                        <td>@item.Comissao.ToString("0.00")</td>
+                                        <td>
+                                            <div>
+                                                <InputNumber @onblur="AtualizaComissao" @bind-Value="item.Calculo" class="form-control w-25"></InputNumber>
+                                            </div>
+                                        </td>
+                                        <td><MudIconButton Size="Size.Small" Color="Color.Info" Icon="@Icons.Material.Outlined.RemoveRedEye" OnClick="() => VerVendasUsuario(item.Nome)" /></td>
+                                    </tr>
+                                }
+                        </tbody>
+                    </table>
+                </div>
+            </MudPaper>
+        </MudItem>
+
     </MudGrid>
 </MudContainer>
 }
@@ -117,6 +185,9 @@ else
     bool carregando = true;
     List<Usuario> usuarios = new List<Usuario>();
     List<PerfilUsuario> perfis = new List<PerfilUsuario>();
+    List<UsuarioComissao> usuariosCalculos = new List<UsuarioComissao>();
+    List<Venda> Vendas = new List<Venda>();
+    List<Venda> VendasDoUsuario = new List<Venda>();
 
     ModalDeConfirmacao modalConfirmacao;
     string idUsuarioDeletar { get; set; }
@@ -128,7 +199,10 @@ else
     public string novoUsuarioSenha { get; set; }
     public decimal porcentUsuario { get; set; }
     public bool alterarPorcent = false;
-    
+
+    public DateTime? primeiroDiaDoMes { get; set;}
+    public DateTime? ultimoDiaDoMes { get; set; }
+    bool modalTransacoes = false;
 
     protected override async Task OnInitializedAsync()
     {
@@ -136,8 +210,19 @@ else
         if (!usuarioAtivo) NavigationManager.NavigateTo("/pagamento");
         carregando = true;
         await AtualizaInfo();
+        DateTime hoje = DateTime.Now;
+        primeiroDiaDoMes = new DateTime(hoje.Year, hoje.Month, 1);
+        ultimoDiaDoMes = primeiroDiaDoMes.Value.AddMonths(1).AddDays(-1);
+        await BuscaVendas();
         carregando = false;
 
+    }
+
+    public void AbrirOuFecharModal1() => modalTransacoes = !modalTransacoes;
+    public void VerVendasUsuario(string nome)
+    {
+        VendasDoUsuario = Vendas.Where(x => x.NomeDoUsuario == nome).ToList();
+        AbrirOuFecharModal1();
     }
 
     public async Task AtualizaInfo()
@@ -225,4 +310,44 @@ else
         alterarPorcent = false;
     }
 
+    public class UsuarioComissao
+    {
+        public string Id { get; set; }
+        public string Nome { get; set; }
+        public decimal TotalVendas { get; set; }
+        public decimal Comissao { get; set; }
+        public decimal Calculo { get; set; }
+    }
+
+    public void GeraUsuariosComissao()
+    {
+
+        foreach (var item in usuarios)
+        {
+            UsuarioComissao userComissao = new();
+            userComissao.Nome = item.Email;
+            userComissao.Id = item.Id;
+            userComissao.TotalVendas = 0;
+            userComissao.Calculo = 0;
+            userComissao.Comissao = 0;
+            foreach (var i in Vendas)
+            {
+                if (i.NomeDoUsuario == userComissao.Nome) { userComissao.TotalVendas += (decimal)i.Total - (decimal)i.Descontos; }
+            }
+            usuariosCalculos.Add(userComissao);
+        }
+    }
+    public async Task BuscaVendas()
+    {
+        usuariosCalculos.Clear();
+        Vendas = await VendaServices.ObterVendasPorDataAsync(primeiroDiaDoMes, ultimoDiaDoMes);
+        GeraUsuariosComissao();
+    }
+    public void AtualizaComissao()
+    {
+        foreach (var item in usuariosCalculos)
+        {
+            item.Comissao = item.TotalVendas * (item.Calculo / 100);
+        }
+    }
 }
