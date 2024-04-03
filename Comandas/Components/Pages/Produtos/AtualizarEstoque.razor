@@ -31,7 +31,7 @@ else
                 <option value="0">Outro</option>
             </InputSelect>
         </MudItem>
-        <MudItem sm="8" xs="12">
+        <MudItem sm="8"  xs="12">
             <h5>Produto</h5>
             <MudFocusTrap Disabled="false" DefaultFocus="DefaultFocus.FirstChild">
             <BlazoredTypeahead SearchMethod="buscar" @bind-Value="produtoSelecionado">
@@ -45,7 +45,7 @@ else
             </MudFocusTrap>
         </MudItem>
         <MudItem sm="1" xs="6">
-            <h5>Quantidade</h5>
+            <h5>Qtd.</h5>
             <InputNumber class="form-control" @bind-Value="quantidade"></InputNumber>
         </MudItem>
         @if (tag == 0)
@@ -61,7 +61,7 @@ else
                 <InputNumber class="form-control" @bind-Value="CustoNovo"></InputNumber>
             </MudItem>
         }
-        <MudItem>
+        <MudItem Class="ms-10">
             <MudButton OnClick="AddNaFila" Class="mt-6 ms-6" Color="Color.Success">Lançar</MudButton>
         </MudItem>
           

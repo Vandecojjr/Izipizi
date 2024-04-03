@@ -81,7 +81,7 @@ else
             </MudPaper>
         </MudItem>
 
-        <MudItem sm="6" xs="12" xl="12" md="6">
+        <MudItem sm="12" xs="12" xl="12" md="12">
             <MudPaper Elevation="2" Class="pa-4">
                 @if (alterarPorcent)
                 {
@@ -111,7 +111,7 @@ else
             </MudPaper>
         </MudItem>
 
-        <MudItem sm="12" xs="12" xl="12" md="6">
+        <MudItem sm="12" xs="12" xl="12" md="12">
             <MudPaper Elevation="2" Class="pa-4">
                 <div class="py-2">
                     <InputSelect class="form-control" @bind-Value="usuarioId">
@@ -135,7 +135,7 @@ else
             </MudPaper>
         </MudItem>
 
-         <MudItem sm="12" xs="12" xl="12" md="6">
+         <MudItem sm="12" xs="12" xl="12" md="12">
             <MudPaper Elevation="2" Class="pa-4">
                 <h4 class="d-flex justify-content-center">Comissão</h4>
                 <hr/>
@@ -165,7 +165,7 @@ else
                                         <td>@item.Comissao.ToString("0.00")</td>
                                         <td>
                                             <div>
-                                                <InputNumber @onblur="AtualizaComissao" @bind-Value="item.Calculo" class="form-control w-25"></InputNumber>
+                                                <InputNumber @onblur="AtualizaComissao" @bind-Value="item.Calculo" class="form-control w-auto"></InputNumber>
                                             </div>
                                         </td>
                                         <td><MudIconButton Size="Size.Small" Color="Color.Info" Icon="@Icons.Material.Outlined.RemoveRedEye" OnClick="() => VerVendasUsuario(item.Nome)" /></td>
