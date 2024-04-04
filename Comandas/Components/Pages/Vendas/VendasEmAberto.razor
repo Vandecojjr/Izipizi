@@ -1,4 +1,37 @@
-﻿
+﻿@rendermode InteractiveServer
+@attribute [StreamRendering]
+@inject IEmAbertoServices EmabertoServices
+
+@if (abrirModalNovoEmAberto)
+{
+    <div class="modal-backdrop show"></div>
+    <div class="modal" tabindex="-1" role="dialog"
+         arial-hidden="true" style="display:block;">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Nova conta</h2>
+                </div>
+                <div class="modal-body">
+                    <EditForm Model="@NovoEmAberto" OnValidSubmit="CadastrarNovoEmAberto">
+                        <DataAnnotationsValidator />
+                        <div>
+                            <label>Nome</label>
+                            <InputText @bind-Value="NovoEmAberto.Nome" class="form-control" />
+                            <ValidationMessage For="@(() => NovoEmAberto.Nome)" />
+                        </div>
+                        <div class="modal-footer">
+                            <MudButton Class="mx-3" ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Error">Aplicar</MudButton>
+                            <MudButton OnClick="FecharModalNovo" Variant="Variant.Filled">Cancelar</MudButton>
+                        </div>
+                    </EditForm>
+                </div>
+            </div>
+        </div>
+    </div>
+
+}
+
 <MudPaper Elevation="0" Class="my-4">
     <MudGrid Class="mx-1">
         <MudItem sm="6" xs="6" md="4" xl="2">
@@ -8,34 +41,66 @@
                     </CardHeaderContent>
                 </MudCardHeader>
                 <MudCardContent Class="d-flex justify-content-center">
-                         <MudIconButton Icon="@Icons.Material.Filled.Add" Size="Size.Large" Style="color:white;"></MudIconButton>
+                    <MudIconButton OnClick="AbrirModalNovo" Icon="@Icons.Material.Filled.Add" Size="Size.Large" Style="color:white;"></MudIconButton>
                 </MudCardContent>
             </MudCard>
         </MudItem>
-        <MudItem sm="6" xs="6" md="4" xl="2">
-            <MudCard Elevation="0" Style="background:#1C7293;">
-                <MudCardHeader>
-                    <CardHeaderContent>
-                        <div class="d-flex">
-                            <MudText Typo="Typo.h6" Style="color:white;">1</MudText>
-                            <MudSpacer />
-                            <MudIconButton Icon="@Icons.Material.Filled.RemoveRedEye" Style="color:white;"></MudIconButton>
-                        </div>
-                        <hr / style="color:white;">
-                    </CardHeaderContent>
-                </MudCardHeader>
-                <MudCardContent>
-                    <MudText Typo="Typo.h6" Style="color:white;">Nome</MudText>
-                </MudCardContent>
-                <hr / style="color:white;">
-                <MudCardActions Class="d-flex justify-content-center">
-                    <MudText Typo="Typo.h6" Style="color:white;">Valor</MudText>
-                </MudCardActions>
-            </MudCard>
-        </MudItem>
+        @foreach (var item in EmAbertos)
+        {
+            <MudItem sm="6" xs="6" md="4" xl="2">
+                <MudCard Elevation="0" Style="background:#1C7293;">
+                    <MudCardHeader>
+                        <CardHeaderContent>
+                            <div class="d-flex">
+                                <MudText Typo="Typo.h6" Style="color:white;">@item.Numero</MudText>
+                                <MudSpacer />
+                                <MudIconButton Icon="@Icons.Material.Filled.RemoveRedEye" Style="color:white;"></MudIconButton>
+                            </div>
+                            <hr / style="color:white;">
+                        </CardHeaderContent>
+                    </MudCardHeader>
+                    <MudCardContent>
+                        <MudText Typo="Typo.h6" Style="color:white;">@item.Nome</MudText>
+                    </MudCardContent>
+                    <hr / style="color:white;">
+                    <MudCardActions Class="d-flex justify-content-center">
+                        <MudText Typo="Typo.h6" Style="color:white;">@item.Total</MudText>
+                    </MudCardActions>
+                </MudCard>
+            </MudItem>
+        }
     </MudGrid>
 </MudPaper>
 
 @code {
+    public List<EmAberto> EmAbertos = new List<EmAberto>();
+    public EmAberto NovoEmAberto = new();
+    public bool abrirModalNovoEmAberto { get; set; }
 
+    protected override async Task OnInitializedAsync()
+    {
+        EmAbertos = await EmabertoServices.GetAllEmAberto();
+    }
+
+    public void AbrirModalNovo() => abrirModalNovoEmAberto = true;
+    public void FecharModalNovo()
+    {
+        abrirModalNovoEmAberto = false;
+    }
+
+    public async Task CadastrarNovoEmAberto()
+    {
+        int maiorNumero = EmAbertos.Any() ? EmAbertos.Max(e => e.Numero) : 0;
+        int proximoNumero = maiorNumero + 1;
+        while (EmAbertos.Any(e => e.Numero == proximoNumero))
+        {
+            proximoNumero++;
+        }
+        NovoEmAberto.Numero = proximoNumero;
+
+        await EmabertoServices.AddEmAberto(NovoEmAberto);
+        EmAbertos = await EmabertoServices.GetAllEmAberto();
+        NovoEmAberto = new();
+        FecharModalNovo();
+    }
 }
