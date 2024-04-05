@@ -250,6 +250,8 @@ namespace Comandas.Services
         {
             List<Produto> produtosDependentes = await _context.Produtos.Where(x => x.CodigoDoProdutoVolume == produto.Id).ToListAsync();
             var conferirProdutos = await GetAllProdutosAsync();
+            var categoria = await _categories.GetCategoriasByIdAsync((Guid)produto.ID_categoria);
+            produto.NomeDaCategoria = categoria.Nome;
             if (produto.Codigo == null || produto.Codigo == 0)
             {
                 var maiorCodigo = 0;

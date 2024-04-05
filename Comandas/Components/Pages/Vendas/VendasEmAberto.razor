@@ -1,6 +1,146 @@
 ﻿@rendermode InteractiveServer
 @attribute [StreamRendering]
 @inject IEmAbertoServices EmabertoServices
+@inject ICaixaServices CaixaServices
+@inject IClienteServices ClienteServices
+@inject IMetodoDePagamentoServices MetodoDePagamentoServices
+@inject IUsuarioServices UsuarioServices
+@inject IToastService toastService
+@inject IVendaServices VendaServices
+
+@using Blazored.Toast.Configuration
+@using Blazored.Typeahead
+
+<BlazoredToasts Position="ToastPosition.TopRight"
+                Timeout="5"
+                IconType="IconType.Material"
+                InfoIcon="school"
+                WarningIcon="warning" />
+
+@if (abrirModalVenda)
+{
+    <div class="modal-backdrop show"></div>
+    <div class="modal" tabindex="-1" role="dialog"
+         arial-hidden="true" style="display:block;">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h6 class="modal-title">Fhechamento de venda</h6>
+                </div>
+                
+                    <div class="modal-body">
+                        <MudDivider />
+                        <MudPaper Elevation="0" Class="m-3">
+                            <MudFocusTrap Disabled="false" DefaultFocus="DefaultFocus.FirstChild">
+                                @foreach (var item in formasDePagamento)
+                                {
+                                    <label for="metodoDePagamento"><h6>Forma de pagamento</h6></label>
+                                    <InputSelect id="metodoDePagamento" class="form-control" @bind-Value="item.MetodoDePagamentoId">
+                                        @foreach (var metodo in metodosDePagamento)
+                                        {
+                                            <option value="@metodo.Id">@metodo.Nome</option>
+                                        }
+                                    </InputSelect>
+                                    <label for="valor"><h6>Valor</h6></label>
+                                    <InputNumber @onblur="AtualizaFaltaPagar" @onkeydown="@(e => CompletaValorDoInput(item, e))" id="valor" class="form-control mb-2" @bind-Value="item.Valor"></InputNumber>
+                                    <MudButton OnClick="() => RemoveFormaDePagamento(item)" Class="mx-3" Variant="Variant.Text" StartIcon="@Icons.Material.Filled.Delete" Color="Color.Error"></MudButton>
+                                }
+                            </MudFocusTrap>
+                            <MudPaper Elevation="0" Class="m-3">
+                                <label for="clientes"><h6>Cliente</h6></label>
+                                <div class="d-flex">
+                                    <InputSelect id="clientes" class="form-control" @bind-Value="clienteId">
+                                        <option selected>Selecione um cliente</option>
+                                        @foreach (var cli in clientes)
+                                        {
+                                            <option value="@cli.Id">@cli.Nome</option>
+                                        }
+                                    </InputSelect>
+                                </div>
+                            </MudPaper>
+                        </MudPaper>
+                        <MudPaper Elevation="0" Class="d-flex">
+                            <MudButton OnClick="() => AdicionarFormaDePagamento()" Title="Ctrl + q" Class="mx-2" Variant="Variant.Text" StartIcon="@Icons.Material.Filled.Add" Color="Color.Success">Forma de pagamento</MudButton>
+                            <MudSwitch Label="Alterar Valor" @bind-Value="alterarDesconto" Color="Color.Primary" Class="mr-n2 ms-10" />
+                        </MudPaper>
+
+                        @if (alterarDesconto)
+                        {
+                            <MudDivider DividerType="DividerType.Middle" />
+                            <MudPaper Elevation="0" Class="d-flex justify-content-end mx-7 mb-2">
+                                <div>
+                                    <label>Acrecimo</label>
+                                    <InputNumber @oninput="AcrecimoMetodo" class="form-control " @bind-Value="acrecimoVariavel"></InputNumber>
+                                </div>
+                                <div class="d-flex mx-2 mt-4">
+                                    <label class="pt-3">R$</label>
+                                    <MudSwitch Label="%" @bind-Value="modoPorcent" Color="Color.Primary" Class="ms-2" />
+                                </div>
+                                <div>
+                                    <label>Desconto</label>
+                                    <InputNumber @oninput="AlterarDescontoInput" class="form-control" @bind-Value="descontoAlterado"></InputNumber>
+                                </div>
+                            </MudPaper>
+                        }
+
+                        <MudPaper Class="d-flex px-3 pt-2 mb-1" Style="background:#B3E5FC;">
+                            <h5>Desconto</h5>
+                            <MudSpacer />
+                            <h4 aria-hidden="true" class="text-info">@descontoTotal.ToString("C", System.Globalization.CultureInfo.CreateSpecificCulture("pt-BR"))</h4>
+                        </MudPaper>
+                        @if (faltaPagar < 0)
+                        {
+                            <MudPaper Class="d-flex px-3 pt-2" Style="background:#CFD8DC;">
+                                <h3>Troco</h3>
+                                <MudSpacer />
+                                <h2 aria-hidden="true" class="text-dark">@((faltaPagar * -1).ToString("C", System.Globalization.CultureInfo.CreateSpecificCulture("pt-BR")))</h2>
+                            </MudPaper>
+                        }
+                        else
+                        {
+                            <MudPaper Class="d-flex px-3 pt-2" Style="background:#C5E1A5;">
+                                <h3>Total</h3>
+                                <MudSpacer />
+                                <h2 aria-hidden="true" class="text-success">@faltaPagar.ToString("C", System.Globalization.CultureInfo.CreateSpecificCulture("pt-BR"))</h2>
+                            </MudPaper>
+                        }
+                    </div>
+                    <div class="modal-footer">
+                        @if (carregandoVenda)
+                        {
+                            <MudProgressLinear Color="Color.Info" Indeterminate="true" Class="my-7" />
+                        }
+                        else
+                        {
+                            <MudButton OnClick="() => ConfirmarVenda()" Class="mx-3" Variant="Variant.Filled" Title="Ctrl + y" StartIcon="@Icons.Material.Filled.AttachMoney" Color="Color.Success">Confirmar</MudButton>
+                            <MudButton OnClick="() => FecharModalDeVenda()" Variant="Variant.Filled">Cancelar</MudButton>
+                        }
+                    </div>
+            </div>
+
+        </div>
+    </div>
+}
+@if (modalMensagem)
+{
+    <div class="modal-backdrop show"></div>
+    <div class="modal" tabindex="-1" role="dialog"
+         arial-hidden="true" style="display:block;">
+        <div class="modal-dialog modal-sm modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h6 class="modal-title"></h6>
+                </div>
+                <div class="modal-body">
+                    <span class="text-danger">@textoModalMensagem</span>
+                </div>
+                <div class="modal-footer">
+                    <MudButton OnClick="openCloseModalMensagem" Class="mx-3" Variant="Variant.Filled" Color="Color.Info">Ok</MudButton>
+                </div>
+            </div>
+        </div>
+    </div>
+}
 
 @if (abrirModalNovoEmAberto)
 {
@@ -32,6 +172,30 @@
 
 }
 
+@if (verProdutos)
+{
+    <div class="modal-backdrop show"></div>
+    <div class="modal" tabindex="-1" role="dialog"
+         arial-hidden="true" style="display:block;">
+        <div class="modal-dialog modal-dialog-centered modal-xl" role="document">
+            <div class="modal-content">
+                <MudDataGrid T="ProdutosEmAberto" Items="@produtosDaComanda">
+                    <ToolBarContent>
+                        <MudText Typo="Typo.h6">Transações</MudText>
+                    </ToolBarContent>
+                    <Columns>
+                        <PropertyColumn Property="x => x.Vendedor" Sortable="false" Title="Vendedor" Filterable="false" />
+                        <PropertyColumn Property="x => x.DataDaVenda" Sortable="false" Title="Data" Filterable="false" />
+                        <PropertyColumn Property="x => x.NomeProduto" Sortable="false" Title="Nome" Filterable="false" />
+                        <PropertyColumn Property="x => x.Quantidade" Title="Qtd." Sortable="false" Filterable="false" />
+                    </Columns>
+                </MudDataGrid>
+                <MudButton OnClick="FecharVerProdutos" Class="mx-3 my-3" Variant="Variant.Filled" Color="Color.Info">OK</MudButton>
+            </div>
+        </div>
+    </div>
+}
+
 <MudPaper Elevation="0" Class="my-4">
     <MudGrid Class="mx-1">
         <MudItem sm="6" xs="6" md="4" xl="2">
@@ -54,7 +218,9 @@
                             <div class="d-flex">
                                 <MudText Typo="Typo.h6" Style="color:white;">@item.Numero</MudText>
                                 <MudSpacer />
-                                <MudIconButton Icon="@Icons.Material.Filled.RemoveRedEye" Style="color:white;"></MudIconButton>
+                                    <MudIconButton OnClick="() => AbrirModalDeVenda(item.Total, item.Numero)" Icon="@Icons.Material.Filled.CurrencyBitcoin" Style="color:white;"></MudIconButton>
+                                    <MudIconButton OnClick="() => DeletarComanda(item.Numero)" Icon="@Icons.Material.Filled.DeleteOutline" Style="color:white;"></MudIconButton>
+                                    <MudIconButton OnClick="() => AbrirModalFecharVerProdutos(item.Numero)" Icon="@Icons.Material.Filled.RemoveRedEye" Style="color:white;"></MudIconButton>
                             </div>
                             <hr / style="color:white;">
                         </CardHeaderContent>
@@ -64,7 +230,7 @@
                     </MudCardContent>
                     <hr / style="color:white;">
                     <MudCardActions Class="d-flex justify-content-center">
-                        <MudText Typo="Typo.h6" Style="color:white;">@item.Total</MudText>
+                        <MudText Typo="Typo.h6" Style="color:white;">R$@item.Total</MudText>
                     </MudCardActions>
                 </MudCard>
             </MudItem>
@@ -74,12 +240,47 @@
 
 @code {
     public List<EmAberto> EmAbertos = new List<EmAberto>();
+    public List<ProdutosEmAberto> produtosDaComanda = new List<ProdutosEmAberto>();
+    private List<ProdutoVendido> produtosLancados = new List<ProdutoVendido>();
+    private Caixa caixaAtual = null;
     public EmAberto NovoEmAberto = new();
     public bool abrirModalNovoEmAberto { get; set; }
+    public bool verProdutos { get; set; }
+
+
+    bool carregandoVenda = false;
+    Guid clienteId { get; set; }
+    private List<FormaDePagamento> formasDePagamento = new List<FormaDePagamento>();
+    private decimal faltaPagar { get; set; }
+    public bool modalMensagem = false;
+    public string textoModalMensagem { get; set; }
+    public void openCloseModalMensagem() => modalMensagem = !modalMensagem;
+    private decimal descontoTotal { get; set; }
+    private decimal total { get; set; }
+    Usuario user = new();
+    private List<MetodoDePagamento> metodosDePagamento = new List<MetodoDePagamento>();
+    private bool abrirModalVenda = false;
+    private bool bloqueioModal = false;
+    private List<Cliente> clientes = new List<Cliente>();
+    private bool alterarDesconto = false;
+    private decimal acrecimoVariavel { get; set; }
+    private bool modoPorcent = false;
+    private decimal descontoAlterado { get; set; }
+    private decimal totalfixo { get; set; }
+    private decimal acrecimo { get; set; }
+    private FormaDePagamento formaDePagamento = new();
+
+    public int numeroDaComanda = 0;
+
 
     protected override async Task OnInitializedAsync()
     {
         EmAbertos = await EmabertoServices.GetAllEmAberto();
+        caixaAtual = await CaixaServices.GetCaixaAberto();
+        user = await UsuarioServices.GetUsuario();
+        clientes = await ClienteServices.ObterTodos();
+        metodosDePagamento = await MetodoDePagamentoServices.GetAllMetodosAsync();
+        formasDePagamento.Add(formaDePagamento);
     }
 
     public void AbrirModalNovo() => abrirModalNovoEmAberto = true;
@@ -87,7 +288,13 @@
     {
         abrirModalNovoEmAberto = false;
     }
+    public void FecharVerProdutos() => verProdutos = !verProdutos;
 
+    public async Task AbrirModalFecharVerProdutos(int numero)
+    {
+        produtosDaComanda = await EmabertoServices.GetAllProdutosEmAberto(numero);
+        FecharVerProdutos();
+    }
     public async Task CadastrarNovoEmAberto()
     {
         int maiorNumero = EmAbertos.Any() ? EmAbertos.Max(e => e.Numero) : 0;
@@ -102,5 +309,233 @@
         EmAbertos = await EmabertoServices.GetAllEmAberto();
         NovoEmAberto = new();
         FecharModalNovo();
+    }
+
+    public async Task DeletarComanda(int numero)
+    {
+        await EmabertoServices.DeletarEmAberto(numero);
+        EmAbertos = await EmabertoServices.GetAllEmAberto();
+
+    }
+
+    public async Task LancarProduto()
+    {
+        
+        foreach (var item in produtosDaComanda)
+        {
+            ProdutoVendido produtoAtualizado = new ProdutoVendido();
+            produtoAtualizado.IdDoProduto = item.IdDoProduto;
+            produtoAtualizado.Nome = item.NomeProduto;
+            produtoAtualizado.Quantidade = item.Quantidade;
+            produtoAtualizado.Desconto = 0;
+            produtosLancados.Add(produtoAtualizado);
+        }
+
+    }
+
+    public async Task ConfirmarVenda()
+    {
+        carregandoVenda = true;
+        caixaAtual = await CaixaServices.GetCaixaAberto();
+        Cliente cliente = await ClienteServices.GetCliente((Guid)clienteId);
+        bool metodoDePagamentoNulo = false;
+        bool aprazo = false;
+        decimal totalPrazo = 0;
+
+        foreach (var item in formasDePagamento)
+        {
+            if (item.MetodoDePagamentoId == Guid.Empty) metodoDePagamentoNulo = true;
+            else
+            {
+                var metodoConfere = await MetodoDePagamentoServices.GetMetodoDePagamentoAsync(item.MetodoDePagamentoId);
+                if (metodoConfere.Nome == "A prazo")
+                {
+                    aprazo = true;
+                    totalPrazo += item.Valor;
+                }
+            }
+        }
+        if (faltaPagar > 0)
+        {
+            openCloseModalMensagem();
+            textoModalMensagem = $"Ainda faltam R${faltaPagar} do valor TOTAL para concluir.";
+            carregandoVenda = false;
+        }
+        else if (metodoDePagamentoNulo)
+        {
+            openCloseModalMensagem();
+            textoModalMensagem = "Todas as formas de pagamento devem ser selecionadas.";
+            carregandoVenda = false;
+        }
+        else if ((descontoTotal / total) > user.porcentagemUsuario)
+        {
+            openCloseModalMensagem();
+            textoModalMensagem = $"Você não tem permição para descontos maiors que {user.porcentagemUsuario * 100} %";
+            carregandoVenda = false;
+        }
+        else if (metodosDePagamento.Count == 0 || caixaAtual == null)
+        {
+            abrirModalVenda = false;
+            bloqueioModal = true;
+        }
+        else
+        {
+            if (aprazo)
+            {
+                if (cliente == null)
+                {
+                    openCloseModalMensagem();
+                    textoModalMensagem = "Para vender A prazo tem que selecinar um cliente.";
+                    carregandoVenda = false;
+
+                }
+                else if (totalPrazo > cliente.LimiteRestante)
+                {
+                    openCloseModalMensagem();
+                    textoModalMensagem = "O limite do cliente ja foi excedido";
+                    carregandoVenda = false;
+                }
+                else
+                {
+                    await LancarProduto();
+
+                    List<ProdutoVendido> listaDeProdutos = new List<ProdutoVendido>(produtosLancados);
+                    List<FormaDePagamento> listaDeFormasDePagamentos = new List<FormaDePagamento>(formasDePagamento);
+                    Venda vendaModal = new();
+                    vendaModal.Total = total;
+                    vendaModal.Descontos = descontoTotal;
+                    vendaModal.Caixa = caixaAtual;
+                    vendaModal.IdCliente = cliente.Id;
+                    vendaModal.NomeDoCliente = cliente.Nome;
+                    produtosLancados.Clear();
+                    formasDePagamento.Clear();
+                    total = 0;
+                    descontoTotal = 0;
+                    await VendaServices.AddVendaAsync(vendaModal, listaDeProdutos, listaDeFormasDePagamentos);
+                    abrirModalVenda = false;
+                    toastService.ShowSuccess("Venda realizada com SUCESSO!");
+                    carregandoVenda = false;
+                    await DeletarComanda(numeroDaComanda);
+                }
+
+            }
+            else
+            {
+                await LancarProduto();
+
+                List<ProdutoVendido> listaDeProdutos = new List<ProdutoVendido>(produtosLancados);
+                List<FormaDePagamento> listaDeFormasDePagamentos = new List<FormaDePagamento>(formasDePagamento);
+                Venda vendaModal = new();
+                vendaModal.Total = total;
+                vendaModal.Descontos = descontoTotal;
+                vendaModal.Caixa = caixaAtual;
+
+                if (cliente != null) { vendaModal.NomeDoCliente = cliente.Nome; }
+                produtosLancados.Clear();
+                formasDePagamento.Clear();
+                total = 0;
+                descontoTotal = 0;
+                await VendaServices.AddVendaAsync(vendaModal, listaDeProdutos, listaDeFormasDePagamentos);
+                abrirModalVenda = false;
+                toastService.ShowSuccess("Venda realizada com SUCESSO!");
+                carregandoVenda = false;
+                await DeletarComanda(numeroDaComanda);
+            }
+
+        }
+    }
+
+    public void AtualizaFaltaPagar()
+    {
+        faltaPagar = (totalfixo - descontoTotal) + acrecimo;
+        decimal novoTotal = 0;
+        foreach (var item in formasDePagamento)
+        {
+            novoTotal += item.Valor;
+        }
+        faltaPagar -= novoTotal;
+    }
+
+    private void CompletaValorDoInput(FormaDePagamento forma, KeyboardEventArgs args)
+    {
+        if (args.Key == " ")
+        {
+            forma.Valor = faltaPagar;
+        }
+    }
+
+    public void RemoveFormaDePagamento(FormaDePagamento forma)
+    {
+        formasDePagamento.Remove(forma);
+        AtualizaFaltaPagar();
+    }
+
+    public void AdicionarFormaDePagamento()
+    {
+        formasDePagamento.Add(new FormaDePagamento());
+    }
+
+    private void AcrecimoMetodo(ChangeEventArgs args)
+    {
+        string valorString = args.Value.ToString();
+        total = totalfixo;
+        if (modoPorcent)
+        {
+            if (int.TryParse(valorString, out int valorinteiro))
+            {
+                decimal acrecimoPercentual = (decimal)valorinteiro / 100;
+                acrecimo = acrecimoPercentual * total;
+            }
+            else acrecimo = 0;
+        }
+        else
+        {
+            if (decimal.TryParse(valorString, out decimal valorDecimal))
+            {
+                acrecimo = valorDecimal;
+            }
+            else acrecimo = 0;
+        }
+        AtualizaFaltaPagar();
+    }
+
+    private void AlterarDescontoInput(ChangeEventArgs args)
+    {
+        string valorString = args.Value.ToString();
+        total = totalfixo;
+        if (modoPorcent)
+        {
+            if (int.TryParse(valorString, out int valorinteiro))
+            {
+                decimal descontoPercentual = (decimal)valorinteiro / 100;
+                descontoTotal = descontoPercentual * total;
+            }
+            else descontoTotal = 0;
+        }
+        else
+        {
+            if (decimal.TryParse(valorString, out decimal valorDecimal))
+            {
+                descontoTotal = valorDecimal;
+            }
+            else descontoTotal = 0;
+        }
+        AtualizaFaltaPagar();
+    }
+
+    public void FecharModalDeVenda()
+    {
+        abrirModalVenda = false;
+    }
+
+    public async Task AbrirModalDeVenda(decimal totalComanda, int numero)
+    {
+        produtosDaComanda = await EmabertoServices.GetAllProdutosEmAberto(numero);
+        total = totalComanda;
+        totalfixo = totalComanda;
+        faltaPagar = total;
+        abrirModalVenda = true;
+
+        numeroDaComanda = numero;
     }
 }

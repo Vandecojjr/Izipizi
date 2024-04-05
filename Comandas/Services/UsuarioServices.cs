@@ -285,6 +285,42 @@ namespace Comandas.Services
             return usuarios;
         }
 
+        public async Task<List<Usuario>> GetUsuariosDaConta()
+        {
+            Usuario usuario = new Usuario();
+            List<Usuario> usuarios = new List<Usuario>();
+            var userId = await _user.GetCurrentUserIdAsync();
+            var userCurrent = await _context.Users.FirstOrDefaultAsync(x => x.Id == userId);
+            var users = await _context.Users.Where(x => x.IdDoProprietario == userId || x.Id == userId).ToListAsync();
+
+            if (userCurrent.nivelAdmin == 2)
+            {
+                users = await _context.Users.Where(x => x.IdDoProprietario == userCurrent.IdDoProprietario).ToListAsync();
+            }
+            foreach (var user in users)
+            {
+                usuario.PerfisDesteUser = new List<PerfilUsuario>();
+                var rolesUsers = await _context.UserRoles.Where(x => x.UserId == user.Id).ToListAsync();
+                foreach (var item in rolesUsers)
+                {
+                    PerfilUsuario perfilUsuario = new PerfilUsuario();
+                    var perfil = await _context.Roles.FirstOrDefaultAsync(x => x.Id == item.RoleId);
+                    perfilUsuario.Id = perfil.Id;
+                    perfilUsuario.Nome = perfil.Name;
+                    usuario.PerfisDesteUser.Add(perfilUsuario);
+                }
+                usuario.Id = user.Id;
+                usuario.Email = user.Email;
+                usuario.Empresa = user.NomeEmpresa;
+                usuario.NivelAdmin = user.nivelAdmin;
+                usuario.Ativo = user.IsAtivo;
+                usuario.porcentagemUsuario = user.porcentagemDefinida;
+                usuarios.Add(usuario);
+                usuario = new Usuario();
+            }
+            return usuarios;
+        }
+
         public async Task<List<Usuario>> GetUsuariosDependentes()
         {
             Usuario usuario = new Usuario();

@@ -4,6 +4,7 @@ using Comandas.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Comandas.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240404170041_VendasEmAberto4")]
+    partial class VendasEmAberto4
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -501,9 +504,6 @@ namespace Comandas.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTime>("DataDaVenda")
-                        .HasColumnType("datetime2");
-
                     b.Property<Guid>("IdDoProduto")
                         .HasColumnType("uniqueidentifier");
 
@@ -520,10 +520,6 @@ namespace Comandas.Migrations
 
                     b.Property<int>("Quantidade")
                         .HasColumnType("int");
-
-                    b.Property<string>("Vendedor")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
 

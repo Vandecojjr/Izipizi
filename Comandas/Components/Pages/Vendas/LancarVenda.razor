@@ -9,6 +9,7 @@
 @inject ICaixaServices CaixaServices
 @inject IUsuarioServices UsuarioServices
 @inject IClienteServices ClienteServices
+@inject IEmAbertoServices EmabertoServices
 @inject IJSRuntime JSRuntime
 
 @using Blazored.Toast.Configuration
@@ -56,6 +57,49 @@ else if (bloqueioModal)
 
 @* Modal para o fechamento de venda. *@
 
+
+
+    @if (modalDeixarEmAberto)
+    {
+        <div class="modal-backdrop show"></div>
+        <div class="modal" tabindex="-1" role="dialog"
+             arial-hidden="true" style="display:block;">
+            <div class="modal-dialog modal-dialog-centered" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h2>Nova conta</h2>
+                    </div>
+                    <div class="modal-body">
+                        <div>
+                            <label>Comanda</label>
+                            <InputSelect class="form-control" @bind-Value="numeroDaContaEmAberto">
+                                <option value="0">Selecione uma comanda</option>
+                                @foreach (var item in ContasEmAberto)
+                                {
+                                     <option value="@item.Numero">@item.Numero  -  (@item.Nome)</option>
+                                }
+                            </InputSelect>
+                        </div>
+                        <div>
+                            <label>Vendedor</label>
+                            <InputSelect class="form-control" @bind-Value="vendedor">
+                                <option value="null">Selecione uma comanda</option>
+                                @foreach (var item in usuarios)
+                                {
+                                    <option value="@item.Email">@item.Email</option>
+                                }
+                            </InputSelect>
+                        </div>
+                        <div class="modal-footer">
+                                <MudButton OnClick="DeixarEmAberto" Class="mx-3" ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Error">Aplicar</MudButton>
+                                <MudButton OnClick="AbrirFecharModalDeixarEmAberto" Variant="Variant.Filled">Cancelar</MudButton>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    }
 
 @if (modalNovoCliente)
     {
@@ -300,11 +344,11 @@ else if (bloqueioModal)
                 </MudAlert>
             }
             <hr/>
-            <MudFocusTrap Disabled="false" DefaultFocus="DefaultFocus.FirstChild">
+        <MudFocusTrap Disabled="false" DefaultFocus="DefaultFocus.FirstChild">
     <MudGrid>
         <MudItem sm="6" xs="12">
             <h5>Produto</h5>
-                <BlazoredTypeahead SearchMethod="buscar" @bind-Value="produtoSelecionado">
+                    <BlazoredTypeahead SearchMethod="buscar" @bind-Value="produtoSelecionado">
                     <SelectedTemplate>
                         Cod @context.Codigo ------- @context.Nome  ---- @context.Valor?.ToString("C", System.Globalization.CultureInfo.CreateSpecificCulture("pt-BR"))--------------- Qtd.(@context.Quantidade)
                     </SelectedTemplate>
@@ -321,11 +365,11 @@ else if (bloqueioModal)
             <h5>Desconto (@(modoPorcent ? "%" : "R$"))</h5>
             <InputNumber class="form-control" @bind-Value="desconto"></InputNumber>
         </MudItem >
-        <MudItem sm="1">
+        <MudItem sm="1" @onkeydown="HandleKeyDown">
             <h5>Modo de desconto</h5>
             <MudSwitch Class="ms-10" @bind-Value="modoPorcent" Label="%" Color="Color.Success" />
         </MudItem>
-        <MudItem>
+        <MudItem @onkeydown="HandleKeyDown">
             <MudButton OnClick="() => LancarProduto(produtoSelecionado, quantidade, desconto)" Title="Ctrl + Enter" Class="mt-6 ms-6" Color="Color.Success">Lançar</MudButton>
         </MudItem>
     </MudGrid>
@@ -334,7 +378,7 @@ else if (bloqueioModal)
 
 
 
-@if (produtosLancados.Count != 0)
+    @if (produtosLancados.Count != 0)
 {
         <MudGrid Class="pt-4 mb-3" Spacing="1" @onkeydown="HandleKeyDown">
         <MudItem xs=12 sm=6>
@@ -352,7 +396,8 @@ else if (bloqueioModal)
         <MudItem xs="12">
             <MudPaper Class="d-flex align-center justify-center mud-width-full ">
                 <MudButton OnClick="() => AbrirModalDeVenda()" FullWidth Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Sell" Size="Size.Large" Title="Ctrl + y" Color="Color.Success"><h4>Vender</h4></MudButton>
-                         <MudIconButton Class="mx-2" Icon="@Icons.Material.Filled.FlashOn" OnClick="AbreVendaRapida" Title="Venda Express - Ctrl + i " Color="Color.Warning" aria-label="informacoes"></MudIconButton>
+                <MudIconButton Class="mx-2" Icon="@Icons.Material.Filled.FlashOn" OnClick="AbreVendaRapida" Title="Venda Express - Ctrl + i " Color="Color.Warning" aria-label="informacoes"></MudIconButton>
+                     <MudIconButton Class="mx-2" Icon="@Icons.Material.Filled.OpenInNew" OnClick="AbrirFecharModalDeixarEmAberto" Color="Color.Info" aria-label="informacoes"></MudIconButton>
              </MudPaper>
          </MudItem>
          @foreach (var item in produtosLancados)
@@ -384,6 +429,9 @@ else if (bloqueioModal)
 
 
 @code {
+    public bool receberComanda { get; set; }
+    public string vendedor { get; set; }
+    public bool modalDeixarEmAberto { get; set; }
     public bool carregando = true;
     public bool baixando = false;
     public bool vendaRapida = false;
@@ -391,7 +439,7 @@ else if (bloqueioModal)
     private Caixa caixaAtual = null;
     private Produto produtoSelecionado;
     private FormaDePagamento formaDePagamento = new();
-    private int quantidade { get; set; }
+    private int quantidade = 1;
     private decimal acrecimo { get; set; }
     private decimal acrecimoVariavel { get; set; }
     private decimal desconto { get; set; }
@@ -410,6 +458,7 @@ else if (bloqueioModal)
     private bool mostrarErroCadastroDeCliente = false;
     private string erroCadastroDeCliente { get; set; }
     private int quantidadeDePessoas = 1;
+    private int numeroDaContaEmAberto { get; set; }
     ModalDeConfirmacao modalConfirma = new();
     Guid clienteId { get; set; }
     Cliente NovoCliente = new();
@@ -424,6 +473,8 @@ else if (bloqueioModal)
     private List<MetodoDePagamento> metodosDePagamento = new List<MetodoDePagamento>();
     private List<FormaDePagamento> formasDePagamento = new List<FormaDePagamento>();
     private List<Cliente> clientes = new List<Cliente>();
+    private List<EmAberto> ContasEmAberto = new List<EmAberto>();
+    private List<Usuario> usuarios = new List<Usuario>();
 
     Usuario user = new();
 
@@ -446,11 +497,14 @@ else if (bloqueioModal)
         caixaAtual = await CaixaServices.GetCaixaAberto();
         user = await UsuarioServices.GetUsuario();
         clientes = await ClienteServices.ObterTodos();
+        ContasEmAberto = await EmabertoServices.GetAllEmAberto();
+        usuarios = await UsuarioServices.GetUsuariosDaConta();
         carregando = false;
     }
 
     private async Task HandleKeyDown(KeyboardEventArgs e)
     {
+        
         if (e.CtrlKey && e.Key == "Enter")
         {
             // Execute ação desejada, por exemplo, salvar os dados
@@ -511,6 +565,7 @@ else if (bloqueioModal)
         faltaPagar = total;
         abrirModalVenda = true;
     }
+    public void ReceberComanda() => receberComanda = !receberComanda;
 
     public async Task ConfirmarVenda()
     {
@@ -882,6 +937,20 @@ else if (bloqueioModal)
         }
         AtualizaFaltaPagar();
         await ConfirmarVenda();
+    }
+
+    public void AbrirFecharModalDeixarEmAberto() => modalDeixarEmAberto = !modalDeixarEmAberto;
+    public async Task DeixarEmAberto()
+    {
+        await EmabertoServices.AddProdutoEmAberto(produtosLancados, numeroDaContaEmAberto, vendedor);
+        AbrirFecharModalDeixarEmAberto();
+        NavigationManager.NavigateTo(NavigationManager.Uri, true);
+    }
+
+    public async Task Teste()
+    {
+        
+        quantidade = 3;
     }
 
 }

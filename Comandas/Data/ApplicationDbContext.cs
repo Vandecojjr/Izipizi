@@ -25,6 +25,7 @@ namespace Comandas.Data
         public DbSet<Cliente> Clientes { get; set; }
         public DbSet<PagMercadoPad> PagamentosCartao { get; set; }
         public DbSet<EmAberto> VendasEmAberto { get; set; }
+        public DbSet<ProdutosEmAberto> produtosEmAberto { get; set; } 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);

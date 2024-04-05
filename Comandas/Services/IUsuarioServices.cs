@@ -6,6 +6,7 @@ namespace Comandas.Services
     {
         Task<List<Usuario>> GetUsuarios();
         Task<List<Usuario>> GetUsuariosDependentes();
+        Task<List<Usuario>> GetUsuariosDaConta();
         Task<Usuario> GetUsuario(string Id = null);
 
         Task<List<PerfilUsuario>> GetPerfils();

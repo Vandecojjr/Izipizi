@@ -143,7 +143,7 @@ else
     public int produtoCodigo { get; set; }
     public int? QuantidadeDoProdutoSeForProdutoVolume { get; set; }
     public bool AlterouAQunatidadeProdutoVolume { get; set; }
-    
+
 
     List<Categoria> categorias = new List<Categoria>();
     List<Produto> ProdutosVolume = new List<Produto>();
@@ -162,6 +162,7 @@ else
             if(produto.CodigoDoProdutoVolume != null)
                 produtoSelecionado = await ProdutoServices.GetProdutosByIdAsync((Guid)produto.CodigoDoProdutoVolume);
             QuantidadeDoProdutoSeForProdutoVolume = produto.Quantidade;
+            produto.MargemLucro = 0;
         }
         carregando = false;
     }
