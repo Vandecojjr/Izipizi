@@ -504,7 +504,7 @@ else if (bloqueioModal)
 
     private async Task HandleKeyDown(KeyboardEventArgs e)
     {
-        
+        await JSRuntime.InvokeVoidAsync("cancelFunctionKeys", e);
         if (e.CtrlKey && e.Key == "Enter")
         {
             // Execute ação desejada, por exemplo, salvar os dados
@@ -945,12 +945,6 @@ else if (bloqueioModal)
         await EmabertoServices.AddProdutoEmAberto(produtosLancados, numeroDaContaEmAberto, vendedor);
         AbrirFecharModalDeixarEmAberto();
         NavigationManager.NavigateTo(NavigationManager.Uri, true);
-    }
-
-    public async Task Teste()
-    {
-        
-        quantidade = 3;
     }
 
 }
