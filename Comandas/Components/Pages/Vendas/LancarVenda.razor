@@ -504,7 +504,7 @@ else if (bloqueioModal)
 
     private async Task HandleKeyDown(KeyboardEventArgs e)
     {
-        await JSRuntime.InvokeVoidAsync("cancelFunctionKeys", e);
+        
         if (e.CtrlKey && e.Key == "Enter")
         {
             // Execute ação desejada, por exemplo, salvar os dados

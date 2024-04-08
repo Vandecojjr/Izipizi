@@ -41,7 +41,7 @@ namespace Comandas.Services
 
             ProdutosEmAberto produto = new();
             decimal? total = 0;
-            var vendaEmAberto = await _context.VendasEmAberto.FirstOrDefaultAsync(x => x.Numero == comanda);
+            var vendaEmAberto = await _context.VendasEmAberto.FirstOrDefaultAsync(x => x.Numero == comanda && x.IdDoUsuario == userId);
             foreach (var item in produtos)
             {
                 var ajustarEstoque = await _context.Produtos.FirstOrDefaultAsync(x => x.Id == item.IdDoProduto);
@@ -61,7 +61,7 @@ namespace Comandas.Services
                 _context.Add(produto);
 
             }
-            vendaEmAberto.Total = (decimal)total;
+            vendaEmAberto.Total += (decimal)total;
             _context.Entry(vendaEmAberto).State = EntityState.Modified;
             await _context.SaveChangesAsync();
         }
