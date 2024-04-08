@@ -1,9 +1,7 @@
-﻿using Comandas.Components.Pages.Caixa;
+﻿
 using Comandas.Data;
 using Comandas.Data.Models;
-using Comandas.Migrations;
 using Microsoft.EntityFrameworkCore;
-using static MudBlazor.CategoryTypes;
 
 namespace Comandas.Services
 {
@@ -11,11 +9,13 @@ namespace Comandas.Services
     {
         private readonly ApplicationDbContext _context;
         private readonly CurrentUserService _user;
+        private readonly IProdutoServices _produtoServices;
 
-        public EmAbertoServices(ApplicationDbContext context, CurrentUserService user)
+        public EmAbertoServices(ApplicationDbContext context, CurrentUserService user, IProdutoServices produtoServices)
         {
             _context = context;
             _user = user;
+            _produtoServices = produtoServices;
         }
 
         public async Task AddEmAberto(EmAberto emAberto)
@@ -45,10 +45,11 @@ namespace Comandas.Services
             foreach (var item in produtos)
             {
                 var ajustarEstoque = await _context.Produtos.FirstOrDefaultAsync(x => x.Id == item.IdDoProduto);
-                ajustarEstoque.Quantidade -= item.Quantidade;
                 total += ajustarEstoque.Valor * item.Quantidade;
+                ajustarEstoque.Quantidade -= item.Quantidade;
+               
 
-                if(vendedor == null) produto.Vendedor = userCurrent.Email;
+                if (vendedor == null) produto.Vendedor = userCurrent.Email;
                 else produto.Vendedor = vendedor;
                 produto.IdDoProduto = item.IdDoProduto;
                 produto.NomeProduto = item.Nome;
@@ -57,9 +58,8 @@ namespace Comandas.Services
                 produto.IdDoUsuario = userId;
                 produto.DataDaVenda = DateTime.Now;
 
-                _context.Entry(ajustarEstoque).State = EntityState.Modified;
                 _context.Add(produto);
-
+                await _produtoServices.UpdateProdutoAsync(ajustarEstoque, true);
             }
             vendaEmAberto.Total += (decimal)total;
             _context.Entry(vendaEmAberto).State = EntityState.Modified;
@@ -80,8 +80,8 @@ namespace Comandas.Services
             {
                 var ajustarEstoque = await _context.Produtos.FirstOrDefaultAsync(x => x.Id == item.IdDoProduto);
                 ajustarEstoque.Quantidade += item.Quantidade;
-                _context.Entry(ajustarEstoque).State = EntityState.Modified;
                 if (item.IdDoUsuario == userId && item.NumeroComanda == numero) _context.produtosEmAberto.Remove(item);
+                await _produtoServices.UpdateProdutoAsync(ajustarEstoque,true);
             }
             _context.VendasEmAberto.Remove(comanda);
             await _context.SaveChangesAsync();

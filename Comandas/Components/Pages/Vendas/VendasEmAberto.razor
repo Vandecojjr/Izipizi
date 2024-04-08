@@ -7,6 +7,7 @@
 @inject IUsuarioServices UsuarioServices
 @inject IToastService toastService
 @inject IVendaServices VendaServices
+@inject NavigationManager NavigationManager
 
 @using Blazored.Toast.Configuration
 @using Blazored.Typeahead
@@ -441,6 +442,7 @@
                 carregandoVenda = false;
                 await DeletarComanda(numeroDaComanda);
             }
+            NavigationManager.NavigateTo(NavigationManager.Uri, true);
 
         }
     }
