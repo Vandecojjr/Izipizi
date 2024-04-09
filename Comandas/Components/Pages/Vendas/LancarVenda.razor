@@ -179,10 +179,17 @@ else if (bloqueioModal)
                             {
                                     @if(item.Nome != "A prazo")
                                     {
-                                            <MudButton Class="ma-1 me-8" OnClick="() => LancarVendaRapida(item.Id)" Color="Color.Info" Variant="Variant.Filled">@item.Nome</MudButton>
+                                            <MudButton Class="ma-1 me-8" OnClick="() => LancarVendaRapida(item.Id)" Color="Color.Primary" Variant="Variant.Filled">@item.Nome</MudButton>
                                     }
                                     
                             }
+                            <hr/>
+                            <MudAlert Severity="Severity.Info">
+                                    <strong>F2</strong> Dinheiro,
+                                    <strong>F4</strong> Pix,
+                                    <strong>F8</strong> Crédito,
+                                    <strong>F9</strong> Debito.
+                            </MudAlert>
                             <hr/>
                             </MudFocusTrap>
                             <MudButton OnClick="() => FecharModalDeVenda()" Variant="Variant.Filled">Cancelar</MudButton>                                
@@ -290,7 +297,7 @@ else if (bloqueioModal)
                         }
                         else
                         {
-                                    <MudButton OnClick="() => ConfirmarVenda()" Class="mx-3" Variant="Variant.Filled" Title="Ctrl + y" StartIcon="@Icons.Material.Filled.AttachMoney" Color="Color.Success">Confirmar</MudButton>
+                                    <MudButton OnClick="() => ConfirmarVenda()" Class="mx-3" Variant="Variant.Filled" Title="F4" StartIcon="@Icons.Material.Filled.AttachMoney" Color="Color.Success">Confirmar</MudButton>
                             <MudButton OnClick="() => FecharModalDeVenda()" Variant="Variant.Filled">Cancelar</MudButton>
                             @if (baixando)
                             {
@@ -337,18 +344,18 @@ else if (bloqueioModal)
             @if (infoAtalhos)
             {
                 <MudAlert Severity="Severity.Info">
-                    <strong>Ctrl + Enter</strong> Lança o produto,
-                    <strong>Ctrl + Y</strong> Abre o fchamento de vendas,
-                    <strong>Ctrl + i</strong> Abre o fchamento  de vendas Express,
-                    <strong>Ctrl + Y</strong> Fecha a venda, <strong>Ctrl + q</strong> Adiciona oum metodo de pagamento.
+                    <strong>Enter</strong> Lança o produto,
+                    <strong>F4</strong> Abre o fchamento de vendas,
+                    <strong>F2</strong> Abre o fchamento  de vendas Express,
+                    <strong>F4</strong> Fecha a venda, <strong>Ctrl + q</strong> Adiciona oum metodo de pagamento.
                 </MudAlert>
             }
             <hr/>
-        <MudFocusTrap Disabled="false" DefaultFocus="DefaultFocus.FirstChild">
+        <MudFocusTrap Disabled="Disabled" DefaultFocus="DefaultFocus">
     <MudGrid>
         <MudItem sm="6" xs="12">
             <h5>Produto</h5>
-                    <BlazoredTypeahead SearchMethod="buscar" @bind-Value="produtoSelecionado">
+                    <BlazoredTypeahead MaximumSuggestions="20"  SearchMethod="buscar" @bind-Value="produtoSelecionado">
                     <SelectedTemplate>
                         Cod @context.Codigo ------- @context.Nome  ---- @context.Valor?.ToString("C", System.Globalization.CultureInfo.CreateSpecificCulture("pt-BR"))--------------- Qtd.(@context.Quantidade)
                     </SelectedTemplate>
@@ -370,7 +377,7 @@ else if (bloqueioModal)
             <MudSwitch Class="ms-10" @bind-Value="modoPorcent" Label="%" Color="Color.Success" />
         </MudItem>
         <MudItem @onkeydown="HandleKeyDown">
-            <MudButton OnClick="() => LancarProduto(produtoSelecionado, quantidade, desconto)" Title="Ctrl + Enter" Class="mt-6 ms-6" Color="Color.Success">Lançar</MudButton>
+            <MudButton OnClick="() => LancarProduto(produtoSelecionado, quantidade, desconto)" Title="Enter" Class="mt-6 ms-6" Color="Color.Success">Lançar</MudButton>
         </MudItem>
     </MudGrid>
             </MudFocusTrap>
@@ -395,8 +402,8 @@ else if (bloqueioModal)
         </MudItem>
         <MudItem xs="12">
             <MudPaper Class="d-flex align-center justify-center mud-width-full ">
-                <MudButton OnClick="() => AbrirModalDeVenda()" FullWidth Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Sell" Size="Size.Large" Title="Ctrl + y" Color="Color.Success"><h4>Vender</h4></MudButton>
-                <MudIconButton Class="mx-2" Icon="@Icons.Material.Filled.FlashOn" OnClick="AbreVendaRapida" Title="Venda Express - Ctrl + i " Color="Color.Warning" aria-label="informacoes"></MudIconButton>
+                <MudButton OnClick="() => AbrirModalDeVenda()" FullWidth Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Sell" Size="Size.Large" Title="F4" Color="Color.Success"><h4>Vender</h4></MudButton>
+                <MudIconButton Class="mx-2" Icon="@Icons.Material.Filled.FlashOn" OnClick="AbreVendaRapida" Title="Venda Express - F2 " Color="Color.Warning" aria-label="informacoes"></MudIconButton>
                      <MudIconButton Class="mx-2" Icon="@Icons.Material.Filled.OpenInNew" OnClick="AbrirFecharModalDeixarEmAberto" Color="Color.Info" aria-label="informacoes"></MudIconButton>
              </MudPaper>
          </MudItem>
@@ -427,8 +434,10 @@ else if (bloqueioModal)
 }
 }
 
-
 @code {
+
+
+
     public bool receberComanda { get; set; }
     public string vendedor { get; set; }
     public bool modalDeixarEmAberto { get; set; }
@@ -437,7 +446,7 @@ else if (bloqueioModal)
     public bool vendaRapida = false;
     public bool infoAtalhos = false;
     private Caixa caixaAtual = null;
-    private Produto produtoSelecionado;
+    public Produto produtoSelecionado;
     private FormaDePagamento formaDePagamento = new();
     private int quantidade = 1;
     private decimal acrecimo { get; set; }
@@ -460,8 +469,11 @@ else if (bloqueioModal)
     private int quantidadeDePessoas = 1;
     private int numeroDaContaEmAberto { get; set; }
     ModalDeConfirmacao modalConfirma = new();
+    bool Disabled { get; set; }
     Guid clienteId { get; set; }
     Cliente NovoCliente = new();
+
+    int botao = 0;
 
     bool carregandoVenda = false;
 
@@ -469,6 +481,7 @@ else if (bloqueioModal)
     public string textoModalMensagem { get; set; }
 
     private List<Produto> produtos = new List<Produto>();
+    private List<Produto> produtosAutoComplete = new List<Produto>();
     private List<ProdutoVendido> produtosLancados = new List<ProdutoVendido>();
     private List<MetodoDePagamento> metodosDePagamento = new List<MetodoDePagamento>();
     private List<FormaDePagamento> formasDePagamento = new List<FormaDePagamento>();
@@ -477,6 +490,16 @@ else if (bloqueioModal)
     private List<Usuario> usuarios = new List<Usuario>();
 
     Usuario user = new();
+
+    DefaultFocus DefaultFocus { get; set; } = DefaultFocus.FirstChild;
+
+    [JSInvokable]
+    public void Focus()
+    {
+        Disabled = false;
+        DefaultFocus = DefaultFocus.LastChild;
+        Disabled = true;
+    }
 
     public void AbreInfoAtalhos() => infoAtalhos = !infoAtalhos;
     public void AbreVendaRapida()
@@ -504,8 +527,8 @@ else if (bloqueioModal)
 
     private async Task HandleKeyDown(KeyboardEventArgs e)
     {
-        
-        if (e.CtrlKey && e.Key == "Enter")
+
+        if (e.Key == "Enter")
         {
             // Execute ação desejada, por exemplo, salvar os dados
             await Task.Run(() =>
@@ -514,13 +537,18 @@ else if (bloqueioModal)
             });
 
         }
-        else if (e.CtrlKey && e.Key == "y")
+        else if (e.Key == "F4")
         {
             if (produtosLancados.Count > 0)
             {
                 if (abrirModalVenda && !vendaRapida)
                 {
                     await ConfirmarVenda();
+                }
+                else if (vendaRapida && produtosLancados.Count > 0)
+                {
+                    Guid metodoPagamentoId = metodosDePagamento[1].Id;
+                    await LancarVendaRapida(metodoPagamentoId);
                 }
                 else
                 {
@@ -529,11 +557,16 @@ else if (bloqueioModal)
             }
 
         }
-        else if (e.CtrlKey && e.Key == "i")
+        else if (e.Key == "F2")
         {
-            if(produtosLancados.Count > 0)
+            if (produtosLancados.Count > 0 && !vendaRapida)
             {
                 AbreVendaRapida();
+            }
+            else if (vendaRapida && produtosLancados.Count > 0)
+            {
+                Guid metodoPagamentoId = metodosDePagamento[0].Id;
+                await LancarVendaRapida(metodoPagamentoId);
             }
         }
         else if (e.Key == "Escape")
@@ -549,6 +582,22 @@ else if (bloqueioModal)
                 AdicionarFormaDePagamento();
             }
 
+        }
+        else if (e.Key == "F8")
+        {
+            if (produtosLancados.Count > 0 && vendaRapida)
+            {
+                Guid metodoPagamentoId = metodosDePagamento[2].Id;
+                await LancarVendaRapida(metodoPagamentoId);
+            }
+        }
+        else if (e.Key == "F9")
+        {
+            if (produtosLancados.Count > 0 && vendaRapida)
+            {
+                Guid metodoPagamentoId = metodosDePagamento[3].Id;
+                await LancarVendaRapida(metodoPagamentoId);
+            }
         }
 
     }
@@ -675,7 +724,7 @@ else if (bloqueioModal)
 
         }
         vendaRapida = false;
-        
+
     }
 
     //---------------------------------------
@@ -951,3 +1000,5 @@ else if (bloqueioModal)
     }
 
 }
+
+
