@@ -248,7 +248,7 @@ else if (bloqueioModal)
                          <MudPaper Elevation="0" Class="d-flex justify-content-end mx-7 mb-2">
                              <div>
                                  <label>Acrecimo</label>
-                                    <InputNumber @oninput="AcrecimoMetodo" class="form-control " @bind-Value="acrecimoVariavel"></InputNumber>
+                                    <InputNumber @onblur="AtualizaFaltaPagar" class="form-control " @bind-Value="acrecimo"></InputNumber>
                              </div>
                              <div class="d-flex mx-2 mt-4">
                                 <label class="pt-3">R$</label>
@@ -648,6 +648,7 @@ else if (bloqueioModal)
                     abrirModalVenda = false;
                     toastService.ShowSuccess("Venda realizada com SUCESSO!");
                     carregandoVenda = false;
+                    NavigationManager.NavigateTo(NavigationManager.Uri, true);
                 }
 
             }
@@ -669,10 +670,12 @@ else if (bloqueioModal)
                 abrirModalVenda = false;
                 toastService.ShowSuccess("Venda realizada com SUCESSO!");
                 carregandoVenda = false;
+                NavigationManager.NavigateTo(NavigationManager.Uri, true);
             }
 
         }
         vendaRapida = false;
+        
     }
 
     //---------------------------------------
