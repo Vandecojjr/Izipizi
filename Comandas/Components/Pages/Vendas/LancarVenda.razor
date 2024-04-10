@@ -349,7 +349,7 @@ else if (bloqueioModal)
 
 @* --------------------------------------------- *@
 
-    <MudPaper Class="p-3 mb-3" @onclick=FocarNoAutoComplite>
+    <MudPaper Class="p-3 mb-3">
             <div class="d-flex justify-content-end"><MudIconButton Icon="@Icons.Material.Filled.Info" OnClick="AbreInfoAtalhos" Size="Size.Small" Color="Color.Info" aria-label="informacoes"></MudIconButton></div>
             @if (infoAtalhos)
             {
@@ -362,7 +362,7 @@ else if (bloqueioModal)
             }
             <hr/>
         <MudFocusTrap Disabled="Disabled" DefaultFocus="DefaultFocus.FirstChild">
-    <MudGrid @onclick=FocarNoAutoComplite>
+    <MudGrid>
         <MudItem sm="6" xs="12">
             <h5>Produto</h5>
                     @* <BlazoredTypeahead MaximumSuggestions="20" onblur="@(() => NovoValor())" SearchMethod="buscar" @bind-Value="produtoSelecionado">
