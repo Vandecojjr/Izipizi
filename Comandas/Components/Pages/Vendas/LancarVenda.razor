@@ -511,7 +511,7 @@ window.scrollToSelectedOption = function (selectedIndex) {
                     }
                 }
                 else produtosAutoComplete = produtos.Where(x => x.IsActive && x.Nome.ToLower().Contains(value.ToLower())).ToList();
-                
+
             }
             // Se for um número, busca por 'Codigo'
             else
@@ -672,15 +672,15 @@ window.scrollToSelectedOption = function (selectedIndex) {
 
         if (e.Key == "Enter")
         {
-           
+
             if(produtoSelecionado == null)
             {
                 if(produtosAutoComplete.Count > 0) SelectCustomer(produtosAutoComplete[selectedIndex].Id);
-                
+
             }
             else
             {
-                     await JSRuntime.InvokeVoidAsync("focusElementById", "autoComplit-input");
+                await JSRuntime.InvokeVoidAsync("focusElementById", "autoComplit-input");
                 // Execute ação desejada, por exemplo, salvar os dados
                 await Task.Run(() =>
                 {
@@ -1015,7 +1015,7 @@ window.scrollToSelectedOption = function (selectedIndex) {
             selectedCustomerName = null;
             selectedIndex = 0;
             await JSRuntime.InvokeVoidAsync("focusElementById", "autoComplit-input");
-             
+
         }
 
     }
@@ -1046,9 +1046,9 @@ window.scrollToSelectedOption = function (selectedIndex) {
     {
         string valorString = args.Value.ToString();
         if (int.TryParse(valorString, out int valorinteiro))
-            {
-                quantidade = valorinteiro;
-            }
+        {
+            quantidade = valorinteiro;
+        }
     }
 
     private void AlterarDescontoInput(ChangeEventArgs args)
@@ -1173,7 +1173,7 @@ window.scrollToSelectedOption = function (selectedIndex) {
         carregandoVenda = true;
         await EmabertoServices.AddProdutoEmAberto(produtosLancados, numeroDaContaEmAberto, vendedor);
         AbrirFecharModalDeixarEmAberto();
-        NavigationManager.NavigateTo(NavigationManager.Uri, true);
+        Atualiza();
 
     }
 
