@@ -394,12 +394,12 @@ else if (bloqueioModal)
             <h5>Qtd</h5>
             <InputNumber id="inputQtd" class="form-control" @oninput="AlteraQuantidade" @bind-Value="quantidade"></InputNumber>
         </MudItem>
-        <MudItem sm="1" xs="6"   @onkeydown="HandleKeyDown">
+        <MudItem sm="2" xs="6"   @onkeydown="HandleKeyDown">
             <h5>Valor</h5>
             <InputNumber class="form-control" @bind-Value="valorAlterar"></InputNumber>
         </MudItem>
             <MudItem sm="1" xs="6" @onkeydown="HandleKeyDown">
-            <h5>Desc. (@(modoPorcent ? "%" : "R$"))</h5>
+            <h6>Desc. (@(modoPorcent ? "%" : "R$"))</h6>
             <InputNumber class="form-control" @bind-Value="desconto"></InputNumber>
         </MudItem >
         <MudItem sm="1" @onkeydown="HandleKeyDown">
@@ -505,9 +505,17 @@ window.scrollToSelectedOption = function (selectedIndex) {
             {
                 if(value.Length > 1)
                 {
-                    foreach (char caractere  in value)
+                    var valida = produtos.Where(x => x.IsActive && x.Nome.ToLower().Contains(value.ToLower())).ToList();
+                    if (valida.Count == 0)
                     {
-                        produtosAutoComplete = produtosAutoComplete.Where(x => x.IsActive && x.Nome.ToLower().Contains(caractere)).ToList();
+                        foreach (char caractere in value)
+                        {
+                            produtosAutoComplete = produtosAutoComplete.Where(x => x.IsActive && x.Nome.ToLower().Contains(caractere)).ToList();
+                        }
+                    }
+                    else
+                    {
+                        produtosAutoComplete = valida;
                     }
                 }
                 else produtosAutoComplete = produtos.Where(x => x.IsActive && x.Nome.ToLower().Contains(value.ToLower())).ToList();

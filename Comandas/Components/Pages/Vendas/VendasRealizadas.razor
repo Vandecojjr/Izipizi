@@ -207,6 +207,7 @@ else
         metodos = await MetodosServices.GetAllMetodosAsync();
         metodos = metodos.Where(x => x.Nome != "Aprazo").ToList();
         vendas = await Vendaservises.GetAllVendasAsync();
+        vendas.Reverse();
         var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
         var user = authState.User;
 
@@ -257,6 +258,7 @@ else
         var inicial = dataInicial;
         var final = dataFinal;
         vendas = await Vendaservises.ObterVendasPorDataAsync(inicial, final);
+        vendas.Reverse();
     }
 
     public async Task ImprimirVendas()
