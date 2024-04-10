@@ -374,7 +374,7 @@ else if (bloqueioModal)
                     </ResultTemplate>
                 </BlazoredTypeahead> *@
                 <div class="autocomplete">
-                    <input @bind=selectedCustomerName @onfocus="GanhouFoco" @oninput=HandleInput  class="form-control filter" id="autoComplit-input" @onkeydown=HandleKeyDown autocomplete="off"/>
+                    <input @bind=selectedCustomerName @onfocus="GanhouFoco" @onclick=@(_ => selectedCustomerName = null) @oninput=HandleInput  class="form-control filter" id="autoComplit-input" @onkeydown=HandleKeyDown autocomplete="off"/>
                     @if (produtosAutoComplete.Count > 0)
                     { 
                                     <ul class="options options-container" @ref="optionsList">
@@ -570,7 +570,7 @@ window.scrollToSelectedOption = function (selectedIndex) {
     {
         selectedIndex = 0;
         produtosAutoComplete = new();
-        selectedCustomerName = null;
+        
     }
 
     public bool receberComanda { get; set; }
