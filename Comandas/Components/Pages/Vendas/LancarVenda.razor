@@ -14,6 +14,8 @@
 
 @using Blazored.Toast.Configuration
 @using Blazored.Typeahead
+@using System.Globalization
+@using System.Text.RegularExpressions
 
 <BlazoredToasts Position="ToastPosition.TopRight"
                 Timeout="5"
@@ -83,7 +85,7 @@ else if (bloqueioModal)
                         <div>
                             <label>Vendedor</label>
                             <InputSelect class="form-control" @bind-Value="vendedor">
-                                <option value="null">Selecione uma comanda</option>
+                                <option value="null">Selecione um vendedor</option>
                                 @foreach (var item in usuarios)
                                 {
                                     <option value="@item.Email">@item.Email</option>
@@ -91,8 +93,16 @@ else if (bloqueioModal)
                             </InputSelect>
                         </div>
                         <div class="modal-footer">
+                            @if (carregandoVenda)
+                            {
+                                <MudProgressLinear Color="Color.Info" Indeterminate="true" Class="my-7" />
+                            }
+                            else
+                            {
                                 <MudButton OnClick="DeixarEmAberto" Class="mx-3" ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Error">Aplicar</MudButton>
                                 <MudButton OnClick="AbrirFecharModalDeixarEmAberto" Variant="Variant.Filled">Cancelar</MudButton>
+                            }
+                                
                         </div>
                     </div>
                 </div>
@@ -150,7 +160,7 @@ else if (bloqueioModal)
         <div class="modal-dialog modal-dialog-centered" role="document">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h6 class="modal-title">Fhechamento de venda</h6>
+                    <h6 class="modal-title">Fechamento de venda</h6>
                 </div>
                         @if (vendaRapida)
                         {
@@ -339,7 +349,7 @@ else if (bloqueioModal)
 
 @* --------------------------------------------- *@
 
-    <MudPaper Class="p-3 mb-3">
+    <MudPaper Class="p-3 mb-3" @onclick=FocarNoAutoComplite>
             <div class="d-flex justify-content-end"><MudIconButton Icon="@Icons.Material.Filled.Info" OnClick="AbreInfoAtalhos" Size="Size.Small" Color="Color.Info" aria-label="informacoes"></MudIconButton></div>
             @if (infoAtalhos)
             {
@@ -351,29 +361,49 @@ else if (bloqueioModal)
                 </MudAlert>
             }
             <hr/>
-        <MudFocusTrap Disabled="Disabled" DefaultFocus="DefaultFocus">
-    <MudGrid>
+        <MudFocusTrap Disabled="Disabled" DefaultFocus="DefaultFocus.FirstChild">
+    <MudGrid @onclick=FocarNoAutoComplite>
         <MudItem sm="6" xs="12">
             <h5>Produto</h5>
-                    <BlazoredTypeahead MaximumSuggestions="20"  SearchMethod="buscar" @bind-Value="produtoSelecionado">
+                    @* <BlazoredTypeahead MaximumSuggestions="20" onblur="@(() => NovoValor())" SearchMethod="buscar" @bind-Value="produtoSelecionado">
                     <SelectedTemplate>
                         Cod @context.Codigo ------- @context.Nome  ---- @context.Valor?.ToString("C", System.Globalization.CultureInfo.CreateSpecificCulture("pt-BR"))--------------- Qtd.(@context.Quantidade)
                     </SelectedTemplate>
                     <ResultTemplate>
                         Cod @context.Codigo ------- <h5>@context.Nome  @context.Valor?.ToString("C", System.Globalization.CultureInfo.CreateSpecificCulture("pt-BR"))</h5> --------------- Qtd.(@context.Quantidade)
                     </ResultTemplate>
-                </BlazoredTypeahead>
+                </BlazoredTypeahead> *@
+                <div class="autocomplete">
+                    <input @bind=selectedCustomerName @onfocus="GanhouFoco" @oninput=HandleInput  class="form-control filter" id="autoComplit-input" @onkeydown=HandleKeyDown autocomplete="off"/>
+                    @if (produtosAutoComplete.Count > 0)
+                    { 
+                                    <ul class="options options-container" @ref="optionsList">
+                                        @for (int i = 0; i < produtosAutoComplete.Count; i++)
+                                        {
+                                            var item = produtosAutoComplete[i];
+                                            <li class="option @(i == selectedIndex ? "selected" : "")" @onclick=@(_ => SelectCustomer(item.Id)) @onmouseover="@(_ => selectedIndex = i)">
+                                                <span> Cod @item.Codigo ------- <h5>@item.Nome  @item.Valor?.ToString("C", System.Globalization.CultureInfo.CreateSpecificCulture("pt-BR"))</h5> --------------- Qtd.(@item.Quantidade)</span>
+                                            </li>
+                                        }
+                                    </ul>
+                    }   
+                    
+            </div>
         </MudItem>
-            <MudItem sm="2" xs="6" @onkeydown="HandleKeyDown">
-            <h5>Quantidade</h5>
-            <InputNumber class="form-control" @bind-Value="quantidade"></InputNumber>
+            <MudItem sm="1" xs="6" @onkeydown="HandleKeyDown">
+            <h5>Qtd</h5>
+            <InputNumber id="inputQtd" class="form-control" @oninput="AlteraQuantidade" @bind-Value="quantidade"></InputNumber>
         </MudItem>
-            <MudItem sm="2" xs="6" @onkeydown="HandleKeyDown">
-            <h5>Desconto (@(modoPorcent ? "%" : "R$"))</h5>
+        <MudItem sm="1" xs="6"   @onkeydown="HandleKeyDown">
+            <h5>Valor</h5>
+            <InputNumber class="form-control" @bind-Value="valorAlterar"></InputNumber>
+        </MudItem>
+            <MudItem sm="1" xs="6" @onkeydown="HandleKeyDown">
+            <h5>Desc. (@(modoPorcent ? "%" : "R$"))</h5>
             <InputNumber class="form-control" @bind-Value="desconto"></InputNumber>
         </MudItem >
         <MudItem sm="1" @onkeydown="HandleKeyDown">
-            <h5>Modo de desconto</h5>
+            <h5>Modo</h5>
             <MudSwitch Class="ms-10" @bind-Value="modoPorcent" Label="%" Color="Color.Success" />
         </MudItem>
         <MudItem @onkeydown="HandleKeyDown">
@@ -389,13 +419,13 @@ else if (bloqueioModal)
 {
         <MudGrid Class="pt-4 mb-3" Spacing="1" @onkeydown="HandleKeyDown">
         <MudItem xs=12 sm=6>
-            <MudPaper Style="background:#C5E1A5;" Class="d-flex align-center justify-center mud-width-full py-3">
+            <MudPaper Style="background:#C5E1A5;" @onclick=FocarNoAutoComplite Class="d-flex align-center justify-center mud-width-full py-3">
                 <h2 class="pe-5 text-success">Sub-Total</h2>
                 <h1 class="text-success">@total.ToString("C", System.Globalization.CultureInfo.CreateSpecificCulture("pt-BR"))</h1>
             </MudPaper>
         </MudItem>
         <MudItem xs=12 sm=6>
-            <MudPaper Style="background:#B3E5FC;" Class="d-flex align-center justify-center mud-width-full py-3">
+            <MudPaper Style="background:#B3E5FC;" @onclick=FocarNoAutoComplite Class="d-flex align-center justify-center mud-width-full py-3">
                 <h2 style="color:#01579B;" class="pe-5">Descontos</h2>
                 <h1 style="color:#01579B;">@descontoTotal.ToString("C", System.Globalization.CultureInfo.CreateSpecificCulture("pt-BR"))</h1>
             </MudPaper>
@@ -409,19 +439,19 @@ else if (bloqueioModal)
          </MudItem>
          @foreach (var item in produtosLancados)
         {
-            <MudPaper Height="70px" Class="d-flex align-center justify-center mud-width-full my-2 px-1">
+            <MudPaper Height="70px" Class="d-flex align-center justify-center mud-width-full my-2 px-1" @onclick=FocarNoAutoComplite>
                 <MudItem Class="py-0" xs="8">
                     <h5>@item.Quantidade x @item.Nome</h5>
                 </MudItem>
                 <MudItem xs="4">
                     @if (item.Desconto == null || item.Desconto == 0)
                     {
-                        <h4 class="text-success">@((produtos.FirstOrDefault(x => x.Id == item.IdDoProduto)?.Valor * item.Quantidade)?.ToString("C", System.Globalization.CultureInfo.CreateSpecificCulture("pt-BR")))</h4>
+                        <h4 class="text-success">@((item.valor * item.Quantidade)?.ToString("C", System.Globalization.CultureInfo.CreateSpecificCulture("pt-BR")))</h4>
                     }
                     else
                     {
-                        <h5 class="text-success">@(((produtos.FirstOrDefault(x => x.Id == item.IdDoProduto)?.Valor * item.Quantidade) - item.Desconto)?.ToString("C", System.Globalization.CultureInfo.CreateSpecificCulture("pt-BR")))</h5>
-                        <h8 class="text-success"><s>@((produtos.FirstOrDefault(x => x.Id == item.IdDoProduto)?.Valor * item.Quantidade)?.ToString("C", System.Globalization.CultureInfo.CreateSpecificCulture("pt-BR")))</s></h8>
+                        <h5 class="text-success">@(((item.valor * item.Quantidade) - item.Desconto)?.ToString("C", System.Globalization.CultureInfo.CreateSpecificCulture("pt-BR")))</h5>
+                        <h8 class="text-success"><s>@((item.valor * item.Quantidade)?.ToString("C", System.Globalization.CultureInfo.CreateSpecificCulture("pt-BR")))</s></h8>
                         <h8 class="text-danger"> -@item.Desconto?.ToString("C", System.Globalization.CultureInfo.CreateSpecificCulture("pt-BR"))</h8>
                     }
                 </MudItem>
@@ -434,9 +464,106 @@ else if (bloqueioModal)
 }
 }
 
+
+<script>
+    window.focusElementById = function(id) {
+    var element = document.getElementById(id);
+    if (element) {
+        element.focus();
+    }
+}
+
+window.scrollToSelectedOption = function (selectedIndex) {
+    var selectedOption = document.querySelector('.option.selected');
+    if (selectedOption) {
+        selectedOption.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+}
+</script>
+
+
+
+
 @code {
+    string? selectedCustomerName;
+    string? filter;
+    Guid? selectedCustomerId;
+    private int selectedIndex = 0;
 
 
+    private void HandleInput(ChangeEventArgs e)
+    {
+        selectedIndex = 0;
+        string value = e.Value.ToString();
+
+        // Verifica se o 'value' não é um número
+        bool naoEhNumero = !double.TryParse(value, out _);
+
+        if (value.Length > 0)
+        {
+            if (naoEhNumero)
+            {
+                if(value.Length > 1)
+                {
+                    foreach (char caractere  in value)
+                    {
+                        produtosAutoComplete = produtosAutoComplete.Where(x => x.IsActive && x.Nome.ToLower().Contains(caractere)).ToList();
+                    }
+                }
+                else produtosAutoComplete = produtos.Where(x => x.IsActive && x.Nome.ToLower().Contains(value.ToLower())).ToList();
+                
+            }
+            // Se for um número, busca por 'Codigo'
+            else
+            {
+                produtosAutoComplete = produtos.Where(x => x.IsActive && x.Codigo.ToString().ToLower().Contains(value)).ToList();
+            }
+        }
+        else
+        {
+            produtosAutoComplete = new(); 
+        }
+    }
+
+    public async Task SelectCustomer(Guid id)
+    {
+        selectedCustomerId = id;
+        produtoSelecionado = produtosAutoComplete!.First(c => c.Id.Equals(selectedCustomerId));
+        selectedCustomerName = produtoSelecionado.Nome;
+        produtosAutoComplete = new();
+        selectedIndex = 0;
+        NovoValor();
+        await JSRuntime.InvokeVoidAsync("focusElementById", "inputQtd");
+    }
+
+    private ElementReference optionsList;
+
+    private async Task ScrollToSelectedOption()
+    {
+        await JSRuntime.InvokeVoidAsync("scrollToSelectedOption", selectedIndex);
+    }
+
+    private void MoveSelection(int step)
+    {
+        var newIndex = selectedIndex + step;
+        if (newIndex >= 0 && newIndex < produtosAutoComplete.Count)
+        {
+            selectedIndex = newIndex;
+        }
+    }
+
+    public void PerdeuFoco()
+    {
+        selectedIndex = 0;
+        produtosAutoComplete = new();
+
+    }
+    public void GanhouFoco()
+    {
+        selectedIndex = 0;
+        produtosAutoComplete = new();
+        selectedCustomerName = null;
+    }
 
     public bool receberComanda { get; set; }
     public string vendedor { get; set; }
@@ -473,7 +600,7 @@ else if (bloqueioModal)
     Guid clienteId { get; set; }
     Cliente NovoCliente = new();
 
-    int botao = 0;
+    decimal valorAlterar { get; set; }
 
     bool carregandoVenda = false;
 
@@ -493,12 +620,27 @@ else if (bloqueioModal)
 
     DefaultFocus DefaultFocus { get; set; } = DefaultFocus.FirstChild;
 
-    [JSInvokable]
-    public void Focus()
+    public void NovoValor() => valorAlterar = (decimal)produtoSelecionado.Valor;
+
+    public async void FocarNoAutoComplite() => await JSRuntime.InvokeVoidAsync("focusElementById", "autoComplit-input");
+
+    public async void Atualiza()
     {
-        Disabled = false;
-        DefaultFocus = DefaultFocus.LastChild;
-        Disabled = true;
+        total = 0;
+        totalfixo = 0;
+        faltaPagar = 0;
+        acrecimo = 0;
+        acrecimoVariavel = 0;
+        desconto = 0;
+        descontoTotal = 0;
+        descontoAlterado = 0;
+        quantidade = 1;
+        produtosLancados.Clear();
+        formasDePagamento = new();
+        selectedCustomerName = null;
+        selectedIndex = 0;
+        await JSRuntime.InvokeVoidAsync("focusElementById", "autoComplit-input");
+
     }
 
     public void AbreInfoAtalhos() => infoAtalhos = !infoAtalhos;
@@ -530,11 +672,22 @@ else if (bloqueioModal)
 
         if (e.Key == "Enter")
         {
-            // Execute ação desejada, por exemplo, salvar os dados
-            await Task.Run(() =>
+           
+            if(produtoSelecionado == null)
             {
-                LancarProduto(produtoSelecionado, quantidade, desconto);
-            });
+                if(produtosAutoComplete.Count > 0) SelectCustomer(produtosAutoComplete[selectedIndex].Id);
+                
+            }
+            else
+            {
+                     await JSRuntime.InvokeVoidAsync("focusElementById", "autoComplit-input");
+                // Execute ação desejada, por exemplo, salvar os dados
+                await Task.Run(() =>
+                {
+
+                    LancarProduto(produtoSelecionado, quantidade, desconto);
+                });
+            }
 
         }
         else if (e.Key == "F4")
@@ -599,6 +752,16 @@ else if (bloqueioModal)
                 await LancarVendaRapida(metodoPagamentoId);
             }
         }
+        else if (e.Key == "ArrowDown")
+        {
+            MoveSelection(1); // Move para baixo
+            ScrollToSelectedOption();
+        }
+        else if (e.Key == "ArrowUp")
+        {
+            MoveSelection(-1); // Move para cima
+            ScrollToSelectedOption();
+        }
 
     }
 
@@ -650,7 +813,7 @@ else if (bloqueioModal)
             textoModalMensagem = "Todas as formas de pagamento devem ser selecionadas.";
             carregandoVenda = false;
         }
-        else if ((descontoTotal / total) > user.porcentagemUsuario)
+        else if (total > 0 && (descontoTotal / total) > user.porcentagemUsuario)
         {
             openCloseModalMensagem();
             textoModalMensagem = $"Você não tem permição para descontos maiors que {user.porcentagemUsuario * 100} %";
@@ -689,15 +852,12 @@ else if (bloqueioModal)
                     vendaModal.Caixa = caixaAtual;
                     vendaModal.IdCliente = cliente.Id;
                     vendaModal.NomeDoCliente = cliente.Nome;
-                    produtosLancados.Clear();
-                    formasDePagamento.Clear();
-                    total = 0;
-                    descontoTotal = 0;
                     await VendaServices.AddVendaAsync(vendaModal, listaDeProdutos, listaDeFormasDePagamentos);
+                    Atualiza();
                     abrirModalVenda = false;
-                    toastService.ShowSuccess("Venda realizada com SUCESSO!");
                     carregandoVenda = false;
-                    NavigationManager.NavigateTo(NavigationManager.Uri, true);
+                    toastService.ShowSuccess("Venda realizada com SUCESSO!");
+
                 }
 
             }
@@ -709,17 +869,13 @@ else if (bloqueioModal)
                 vendaModal.Total = total;
                 vendaModal.Descontos = descontoTotal;
                 vendaModal.Caixa = caixaAtual;
-
                 if (cliente != null) { vendaModal.NomeDoCliente = cliente.Nome; }
-                produtosLancados.Clear();
-                formasDePagamento.Clear();
-                total = 0;
-                descontoTotal = 0;
                 await VendaServices.AddVendaAsync(vendaModal, listaDeProdutos, listaDeFormasDePagamentos);
+                Atualiza();
                 abrirModalVenda = false;
-                toastService.ShowSuccess("Venda realizada com SUCESSO!");
                 carregandoVenda = false;
-                NavigationManager.NavigateTo(NavigationManager.Uri, true);
+                toastService.ShowSuccess("Venda realizada com SUCESSO!");
+
             }
 
         }
@@ -758,21 +914,22 @@ else if (bloqueioModal)
         produtoSelecionado = null;
     }
 
-    public void RemoverItemDaListaDeVendas(Guid id)
+    public async void RemoverItemDaListaDeVendas(Guid id)
     {
         var produtoExiste = produtosLancados.FirstOrDefault(x => x.IdDoProduto == id);
-        produtosLancados.Remove(produtoExiste);
-        var produtoEx = produtos.FirstOrDefault(x => x.Id == id);
-        totalfixo -= (decimal)produtoEx.Valor;
+        totalfixo -= (decimal)produtoExiste.valor * (int)produtoExiste.Quantidade;
         descontoTotal -= (decimal)produtoExiste.Desconto;
-        modalConfirma.Ocultar();
         total = totalfixo;
+        produtosLancados.Remove(produtoExiste);
+        if (produtosLancados.Count == 0) Atualiza();
+        modalConfirma.Ocultar();
+        await JSRuntime.InvokeVoidAsync("focusElementById", "autoComplit-input");
     }
 
 
-    public async Task LancarProduto(Produto produto, int quantidade, decimal desc)
+    public async Task LancarProduto(Produto produto, int Qtn, decimal desc)
     {
-        if ((int)quantidade <= 0)
+        if ((int)Qtn <= 0)
         {
             toastService.ShowError("A quantidade do produto deve ser maior que zero!");
         }
@@ -784,7 +941,7 @@ else if (bloqueioModal)
         {
             bloqueioModal = true;
         }
-        else if (produto.IsControled && (produto.Quantidade - quantidade) < 0)
+        else if (produto.IsControled && (produto.Quantidade - Qtn) < 0)
         {
             toastService.ShowError("O quantidade em estoque deste produto não permite esta venda!");
         }
@@ -793,15 +950,16 @@ else if (bloqueioModal)
             var produtoExiste = produtosLancados.FirstOrDefault(x => x.IdDoProduto == produto.Id);
             decimal confereDesconto = 0;
 
-            confereDesconto = desc / ((decimal)produto.Valor * quantidade);
+
+            if (produto.Valor > 0) confereDesconto = desc / ((decimal)valorAlterar * Qtn);
 
             if (modoPorcent)
             {
                 confereDesconto = desc / 100;
-                desc = desc / 100 * ((decimal)produto.Valor * quantidade);
+                desc = desc / 100 * ((decimal)produto.Valor * Qtn);
             }
 
-            total += ((decimal)produto.Valor * quantidade) - desc;
+            total += ((decimal)valorAlterar * Qtn) - desc;
             totalfixo = total + desc;
             descontoTotal += desc;
 
@@ -816,16 +974,18 @@ else if (bloqueioModal)
 
                     if (produtoExiste != null)
                     {
-                        produtoExiste.Quantidade += quantidade;
+                        produtoExiste.Quantidade += Qtn;
                         produtoExiste.Desconto += desc;
+                        produtoExiste.valor = (valorAlterar +  produtoExiste.valor) / produtoExiste.Quantidade;
                     }
                     else
                     {
                         ProdutoVendido produtoAtualizado = new ProdutoVendido();
                         produtoAtualizado.IdDoProduto = produto.Id;
                         produtoAtualizado.Nome = produto.Nome;
-                        produtoAtualizado.Quantidade = (int)quantidade;
+                        produtoAtualizado.Quantidade = (int)Qtn;
                         produtoAtualizado.Desconto = desc;
+                        produtoAtualizado.valor = valorAlterar;
                         produtosLancados.Add(produtoAtualizado);
                     }
                 }
@@ -835,20 +995,27 @@ else if (bloqueioModal)
 
                 if (produtoExiste != null)
                 {
-                    produtoExiste.Quantidade += quantidade;
+                    produtoExiste.Quantidade += Qtn;
                     produtoExiste.Desconto += desc;
+                    produtoExiste.valor = (valorAlterar +  produtoExiste.valor) / produtoExiste.Quantidade;
                 }
                 else
                 {
                     ProdutoVendido produtoAtualizado = new ProdutoVendido();
                     produtoAtualizado.IdDoProduto = produto.Id;
                     produtoAtualizado.Nome = produto.Nome;
-                    produtoAtualizado.Quantidade = (int)quantidade;
+                    produtoAtualizado.Quantidade = (int)Qtn;
                     produtoAtualizado.Desconto = desc;
+                    produtoAtualizado.valor = valorAlterar;
                     produtosLancados.Add(produtoAtualizado);
                 }
             }
             LimparInputs();
+            quantidade = 1;
+            selectedCustomerName = null;
+            selectedIndex = 0;
+            await JSRuntime.InvokeVoidAsync("focusElementById", "autoComplit-input");
+             
         }
 
     }
@@ -873,6 +1040,15 @@ else if (bloqueioModal)
     {
         formasDePagamento.Remove(forma);
         AtualizaFaltaPagar();
+    }
+
+    private void AlteraQuantidade(ChangeEventArgs args)
+    {
+        string valorString = args.Value.ToString();
+        if (int.TryParse(valorString, out int valorinteiro))
+            {
+                quantidade = valorinteiro;
+            }
     }
 
     private void AlterarDescontoInput(ChangeEventArgs args)
@@ -994,9 +1170,11 @@ else if (bloqueioModal)
     public void AbrirFecharModalDeixarEmAberto() => modalDeixarEmAberto = !modalDeixarEmAberto;
     public async Task DeixarEmAberto()
     {
+        carregandoVenda = true;
         await EmabertoServices.AddProdutoEmAberto(produtosLancados, numeroDaContaEmAberto, vendedor);
         AbrirFecharModalDeixarEmAberto();
         NavigationManager.NavigateTo(NavigationManager.Uri, true);
+
     }
 
 }

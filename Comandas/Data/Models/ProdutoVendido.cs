@@ -15,6 +15,8 @@ namespace Comandas.Data.Models
         [Column(TypeName = "decimal(10, 2)")]
         public decimal? Desconto { get; set; }
         [Column(TypeName = "decimal(10, 2)")]
+        public decimal? valor { get; set; }
+        [Column(TypeName = "decimal(10, 2)")]
         public decimal? Lucro { get; set; }
         public Guid? VendaId { get; set; }
         public virtual Venda? Venda { get; set; }

@@ -39,11 +39,12 @@ namespace Comandas.Services
             var userCurrent = await _context.Users.FirstOrDefaultAsync(x => x.Id == userId);
             if (userCurrent.nivelAdmin == 2) userId = userCurrent.IdDoProprietario;
 
-            ProdutosEmAberto produto = new();
+            
             decimal? total = 0;
             var vendaEmAberto = await _context.VendasEmAberto.FirstOrDefaultAsync(x => x.Numero == comanda && x.IdDoUsuario == userId);
             foreach (var item in produtos)
             {
+                ProdutosEmAberto produto = new();
                 var ajustarEstoque = await _context.Produtos.FirstOrDefaultAsync(x => x.Id == item.IdDoProduto);
                 total += ajustarEstoque.Valor * item.Quantidade;
                 ajustarEstoque.Quantidade -= item.Quantidade;
