@@ -374,14 +374,14 @@ else if (bloqueioModal)
                     </ResultTemplate>
                 </BlazoredTypeahead> *@
                 <div class="autocomplete">
-                    <input @bind=selectedCustomerName @onfocus="GanhouFoco" @onclick=@(_ => selectedCustomerName = null) @oninput=HandleInput  class="form-control filter" id="autoComplit-input" @onkeydown=HandleKeyDown autocomplete="off"/>
+                        <input @bind=selectedCustomerName @onfocus="GanhouFoco" @onclick=@(_ => clicarNoAutocomplite()) @oninput=HandleInput class="form-control filter" id="autoComplit-input" @onkeydown=HandleKeyDown autocomplete="off" />
                     @if (produtosAutoComplete.Count > 0)
                     { 
                                     <ul class="options options-container" @ref="optionsList">
                                         @for (int i = 0; i < produtosAutoComplete.Count; i++)
                                         {
                                             var item = produtosAutoComplete[i];
-                                            <li class="option @(i == selectedIndex ? "selected" : "")" @onclick=@(_ => SelectCustomer(item.Id)) @onmouseover="@(_ => selectedIndex = i)">
+                                            <li class="option @(i == selectedIndex ? "selected" : "")" @onclick=@(_ => SelectCustomer(item.Id))>
                                                 <span> Cod @item.Codigo ------- <h5>@item.Nome  @item.Valor?.ToString("C", System.Globalization.CultureInfo.CreateSpecificCulture("pt-BR"))</h5> --------------- Qtd.(@item.Quantidade)</span>
                                             </li>
                                         }
@@ -495,7 +495,7 @@ window.scrollToSelectedOption = function (selectedIndex) {
     {
         selectedIndex = 0;
         string value = e.Value.ToString();
-
+        value = value.ToLower();
         // Verifica se o 'value' não é um número
         bool naoEhNumero = !double.TryParse(value, out _);
 
@@ -524,13 +524,20 @@ window.scrollToSelectedOption = function (selectedIndex) {
             // Se for um número, busca por 'Codigo'
             else
             {
-                produtosAutoComplete = produtos.Where(x => x.IsActive && x.Codigo.ToString().ToLower().Contains(value)).ToList();
+                produtosAutoComplete = produtos.Where(x => x.IsActive && x.Codigo.ToString().ToLower() == value).ToList();
+                if (produtosAutoComplete.Count == 0) produtosAutoComplete = produtos.Where(x => x.IsActive && x.Codigo.ToString().ToLower().Contains(value)).ToList();
             }
         }
         else
         {
             produtosAutoComplete = new(); 
         }
+    }
+
+    public void clicarNoAutocomplite()
+    {
+        selectedCustomerName = null;
+        produtoSelecionado = null;
     }
 
     public async Task SelectCustomer(Guid id)

@@ -4,20 +4,33 @@
 
 <MudTabs Elevation="0" Rounded="true" ApplyEffectsToContainer="false" SliderColor="Color.Dark">
     <MudTabPanel Style="color:#065A82;" Text="Produtos">
-        <Produtos></Produtos>
+        @if(!carregando)
+        {
+            <Produtos></Produtos>
+        }
     </MudTabPanel>
     <AuthorizeView Roles="EasyAdmin,Admin,cadastro/alteracao">
         <Authorized>
             <MudTabPanel Style="color:#065A82;" Text="Atualizar Estoque">
-                <AtualizarEstoque></AtualizarEstoque>
+                 @if (!carregando)
+                {
+                    <AtualizarEstoque></AtualizarEstoque>
+                }
             </MudTabPanel>
             <MudTabPanel Style="color:#065A82;" Text="Time Line">
-                <TimeLineProdutos></TimeLineProdutos>
+                 @if (!carregando)
+                {
+                    <TimeLineProdutos></TimeLineProdutos>
+                }
             </MudTabPanel>
         </Authorized>
     </AuthorizeView>
 </MudTabs>
 
 @code {
-
+    bool carregando = true;
+    protected override void OnAfterRender(bool firstRender)
+    {
+        carregando = false;
+    }
 }
