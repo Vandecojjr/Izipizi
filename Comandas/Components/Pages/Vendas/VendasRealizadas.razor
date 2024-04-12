@@ -206,7 +206,7 @@ else
         caixaAtual = await CaixaServices.GetCaixaAberto();
         metodos = await MetodosServices.GetAllMetodosAsync();
         metodos = metodos.Where(x => x.Nome != "Aprazo").ToList();
-        vendas = await Vendaservises.GetAllVendasAsync();
+        vendas = await Vendaservises.ObterVendasPorDataAsync(dataInicial, dataFinal);
         vendas.Reverse();
         var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
         var user = authState.User;
