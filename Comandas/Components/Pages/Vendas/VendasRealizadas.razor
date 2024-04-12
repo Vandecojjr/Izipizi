@@ -230,7 +230,7 @@ else
         else
         {
             await Vendaservises.DeleteVendaAsync((Guid)vendaId,(Guid)metodoId);
-            vendas = await Vendaservises.GetAllVendasAsync();
+            vendas = await Vendaservises.ObterVendasPorDataAsync(dataInicial, dataFinal);
             modalDeConfirmacaoAberto = !modalDeConfirmacaoAberto;
             StateHasChanged();
         }

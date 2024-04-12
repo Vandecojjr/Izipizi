@@ -197,6 +197,26 @@
     </div>
 }
 
+@if (lancarVenda)
+{
+    <div class="modal-backdrop show"></div>
+    <div class="modal" tabindex="-1" role="dialog"
+         arial-hidden="true" style="display:block;">
+        <div class="modal-dialog modal-xl modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="container">
+                <LancarVenda emAbertoParametro="emAbertoNumero"></LancarVenda>
+                </div>
+            <div class="modal-footer">
+               
+                     <MudButton OnClick="() => ModalLancarVendaEmAberto()" Variant="Variant.Filled">Cancelar</MudButton>
+                
+            </div>
+            </div>
+        </div>
+    </div>
+}
+
 <MudPaper Elevation="0" Class="my-4">
     <MudGrid Class="mx-1">
         <MudItem sm="6" xs="6" md="4" xl="2">
@@ -219,6 +239,7 @@
                             <div class="d-flex">
                                 <MudText Typo="Typo.h6" Style="color:white;">@item.Numero</MudText>
                                 <MudSpacer />
+                                    <MudIconButton OnClick="() => ModalLancarVendaEmAberto(item.Numero)" Icon="@Icons.Material.Filled.Add" Style="color:white;"></MudIconButton>
                                     <MudIconButton OnClick="() => AbrirModalDeVenda(item.Total, item.Numero)" Icon="@Icons.Material.Filled.CurrencyBitcoin" Style="color:white;"></MudIconButton>
                                     <MudIconButton OnClick="() => DeletarComanda(item.Numero)" Icon="@Icons.Material.Filled.DeleteOutline" Style="color:white;"></MudIconButton>
                                     <MudIconButton OnClick="() => AbrirModalFecharVerProdutos(item.Numero)" Icon="@Icons.Material.Filled.RemoveRedEye" Style="color:white;"></MudIconButton>
@@ -231,7 +252,7 @@
                     </MudCardContent>
                     <hr / style="color:white;">
                     <MudCardActions Class="d-flex justify-content-center">
-                        <MudText Typo="Typo.h6" Style="color:white;">R$@item.Total</MudText>
+                            <MudText Typo="Typo.h6" Style="color:white;">R$@item.Total.ToString("C", System.Globalization.CultureInfo.CreateSpecificCulture("pt-BR"))</MudText>
                     </MudCardActions>
                 </MudCard>
             </MudItem>
@@ -248,6 +269,9 @@
     public bool abrirModalNovoEmAberto { get; set; }
     public bool verProdutos { get; set; }
 
+
+    public bool lancarVenda {get;set; }
+    public int emAbertoNumero { get; set; }
 
     bool carregandoVenda = false;
     Guid clienteId { get; set; }
@@ -273,6 +297,12 @@
 
     public int numeroDaComanda = 0;
 
+
+    public void ModalLancarVendaEmAberto(int numero = 0)
+    {
+        lancarVenda = !lancarVenda;
+        emAbertoNumero = numero;
+    }
 
     protected override async Task OnInitializedAsync()
     {
