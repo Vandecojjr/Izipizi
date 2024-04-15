@@ -1,4 +1,6 @@
-﻿namespace Comandas.Data.Models
+﻿using System.ComponentModel.DataAnnotations.Schema;
+
+namespace Comandas.Data.Models
 {
     public class ProdutosEmAberto
     {
@@ -10,5 +12,8 @@
         public int NumeroComanda { get; set; }
         public string Vendedor { get; set; }
         public DateTime DataDaVenda {  get; set; }
+
+        [Column(TypeName = "decimal(10, 2)")]
+        public decimal? total { get; set; }
     }
 }

@@ -46,7 +46,7 @@ namespace Comandas.Services
             {
                 ProdutosEmAberto produto = new();
                 var ajustarEstoque = await _context.Produtos.FirstOrDefaultAsync(x => x.Id == item.IdDoProduto);
-                total += ajustarEstoque.Valor * item.Quantidade;
+                total += item.valor * item.Quantidade;
                 ajustarEstoque.Quantidade -= item.Quantidade;
                
 
@@ -58,6 +58,7 @@ namespace Comandas.Services
                 produto.Quantidade = (int)item.Quantidade;
                 produto.IdDoUsuario = userId;
                 produto.DataDaVenda = DateTime.Now;
+                produto.total = item.valor * item.Quantidade;
 
                 _context.Add(produto);
                 await _produtoServices.UpdateProdutoAsync(ajustarEstoque, true);
@@ -89,6 +90,21 @@ namespace Comandas.Services
 
         }
 
+        public async Task EditarComanda(int numero, decimal valor)
+        {
+            string userId = await _user.GetCurrentUserIdAsync();
+            var userCurrent = await _context.Users.FirstOrDefaultAsync(x => x.Id == userId);
+            if (userCurrent.nivelAdmin == 2) userId = userCurrent.IdDoProprietario;
+
+            var venda = await _context.VendasEmAberto.FirstOrDefaultAsync(x => x.Numero == numero && x.IdDoUsuario == userId);
+            if(venda != null)
+            {
+                venda.Total -= valor;
+                _context.Entry(venda).State = EntityState.Modified;
+                await _context.SaveChangesAsync();
+            }
+        }
+
         public async Task<List<EmAberto>> GetAllEmAberto()
         {
             string userId = await _user.GetCurrentUserIdAsync();
@@ -107,6 +123,35 @@ namespace Comandas.Services
 
             var produtosEmAbertos = await _context.produtosEmAberto.Where(x => x.IdDoUsuario == userId && x.NumeroComanda == numero).ToListAsync();
             return produtosEmAbertos;
+        }
+
+        public async Task RemoveProdutoEmAberto(List<ProdutosEmAberto> produtos, int comanda)
+        {
+
+            decimal? total = 0;
+            // Calcular o total para itens com total nulo e verificar a existência do produto
+            foreach (var item in produtos)
+            {
+                var prod = await _context.Produtos.FirstOrDefaultAsync(x => x.Id == item.IdDoProduto);
+                if (prod != null)
+                {
+                    if (item.total == 0 || item.total == null) item.total = prod.Valor * item.Quantidade;
+                    prod.Quantidade += 1;
+                    await _produtoServices.UpdateProdutoAsync(prod, true);
+                }
+                else
+                {
+                    item.total = 0;
+                }
+                total += item.total;
+
+                // Remover os produtos em aberto
+                _context.produtosEmAberto.Remove(item);
+            }
+            // Salvar as alterações no banco de dados
+            await _context.SaveChangesAsync();
+
+            await EditarComanda(comanda, (decimal)total);
         }
     }
 }

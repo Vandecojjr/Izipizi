@@ -7,6 +7,7 @@
 @inject IUsuarioServices UsuarioServices
 @inject IToastService toastService
 @inject IVendaServices VendaServices
+@inject IProdutoServices ProdutoService
 @inject NavigationManager NavigationManager
 
 @using Blazored.Toast.Configuration
@@ -180,17 +181,22 @@
          arial-hidden="true" style="display:block;">
         <div class="modal-dialog modal-dialog-centered modal-xl" role="document">
             <div class="modal-content">
-                <MudDataGrid T="ProdutosEmAberto" Items="@produtosDaComanda">
+                <MudDataGrid T="ProdutosEmAberto" MultiSelection="true" Items="@produtosDaComanda" SelectedItemsChanged="@SelecionarProduto" >
                     <ToolBarContent>
-                        <MudText Typo="Typo.h6">Transações</MudText>
+                        <MudText Typo="Typo.h6">Produtos vendidos</MudText>
                     </ToolBarContent>
                     <Columns>
+                        <SelectColumn T="ProdutosEmAberto" />
                         <PropertyColumn Property="x => x.Vendedor" Sortable="false" Title="Vendedor" Filterable="false" />
                         <PropertyColumn Property="x => x.DataDaVenda" Sortable="false" Title="Data" Filterable="false" />
                         <PropertyColumn Property="x => x.NomeProduto" Sortable="false" Title="Nome" Filterable="false" />
                         <PropertyColumn Property="x => x.Quantidade" Title="Qtd." Sortable="false" Filterable="false" />
                     </Columns>
                 </MudDataGrid>
+                @if (produtosDaComandaSelecionados.Count > 0)
+                {
+                    <MudButton OnClick="() => AbrirModalDeVenda(totalComanda, numeroComanda, true)" Class="mx-3 mt-1 " Variant="Variant.Filled" Color="Color.Success">Vender</MudButton>
+                }
                 <MudButton OnClick="FecharVerProdutos" Class="mx-3 my-3" Variant="Variant.Filled" Color="Color.Info">OK</MudButton>
             </div>
         </div>
@@ -217,9 +223,13 @@
     </div>
 }
 
-<MudPaper Elevation="0" Class="my-4">
+
+
+@*  Cards das comandas abertar  *@
+
+<MudPaper Elevation="0" Class="my-4 pe-7">
     <MudGrid Class="mx-1">
-        <MudItem sm="6" xs="6" md="4" xl="2">
+        <MudItem sm="12" xs="12" md="4" xl="2">
             <MudCard Elevation="0" Style="background:#1C7293;" Class="h-100">
                 <MudCardHeader>
                     <CardHeaderContent>
@@ -232,7 +242,7 @@
         </MudItem>
         @foreach (var item in EmAbertos)
         {
-            <MudItem sm="6" xs="6" md="4" xl="2">
+            <MudItem sm="12" xs="12" md="4" xl="2">
                 <MudCard Elevation="0" Style="background:#1C7293;">
                     <MudCardHeader>
                         <CardHeaderContent>
@@ -242,7 +252,7 @@
                                     <MudIconButton OnClick="() => ModalLancarVendaEmAberto(item.Numero)" Icon="@Icons.Material.Filled.Add" Style="color:white;"></MudIconButton>
                                     <MudIconButton OnClick="() => AbrirModalDeVenda(item.Total, item.Numero)" Icon="@Icons.Material.Filled.CurrencyBitcoin" Style="color:white;"></MudIconButton>
                                     <MudIconButton OnClick="() => DeletarComanda(item.Numero)" Icon="@Icons.Material.Filled.DeleteOutline" Style="color:white;"></MudIconButton>
-                                    <MudIconButton OnClick="() => AbrirModalFecharVerProdutos(item.Numero)" Icon="@Icons.Material.Filled.RemoveRedEye" Style="color:white;"></MudIconButton>
+                                    <MudIconButton OnClick="() => AbrirModalFecharVerProdutos(item.Numero, item.Total)" Icon="@Icons.Material.Filled.RemoveRedEye" Style="color:white;"></MudIconButton>
                             </div>
                             <hr / style="color:white;">
                         </CardHeaderContent>
@@ -252,7 +262,7 @@
                     </MudCardContent>
                     <hr / style="color:white;">
                     <MudCardActions Class="d-flex justify-content-center">
-                            <MudText Typo="Typo.h6" Style="color:white;">R$@item.Total.ToString("C", System.Globalization.CultureInfo.CreateSpecificCulture("pt-BR"))</MudText>
+                            <MudText Typo="Typo.h6" Style="color:white;">@item.Total.ToString("C", System.Globalization.CultureInfo.CreateSpecificCulture("pt-BR"))</MudText>
                     </MudCardActions>
                 </MudCard>
             </MudItem>
@@ -263,6 +273,7 @@
 @code {
     public List<EmAberto> EmAbertos = new List<EmAberto>();
     public List<ProdutosEmAberto> produtosDaComanda = new List<ProdutosEmAberto>();
+    public List<ProdutosEmAberto> produtosDaComandaSelecionados = new List<ProdutosEmAberto>();
     private List<ProdutoVendido> produtosLancados = new List<ProdutoVendido>();
     private Caixa caixaAtual = null;
     public EmAberto NovoEmAberto = new();
@@ -272,6 +283,9 @@
 
     public bool lancarVenda {get;set; }
     public int emAbertoNumero { get; set; }
+
+    public int numeroComanda { get; set; }
+    public decimal totalComanda { get; set; }
 
     bool carregandoVenda = false;
     Guid clienteId { get; set; }
@@ -319,12 +333,21 @@
     {
         abrirModalNovoEmAberto = false;
     }
-    public void FecharVerProdutos() => verProdutos = !verProdutos;
 
-    public async Task AbrirModalFecharVerProdutos(int numero)
+    public void AbrirVerProdutos() => verProdutos = !verProdutos;
+
+    public void FecharVerProdutos()
     {
+        verProdutos = false;
+    }
+
+    public async Task AbrirModalFecharVerProdutos(int numero, decimal total = 0)
+    {
+        numeroComanda = numero;
+        totalComanda = total;
         produtosDaComanda = await EmabertoServices.GetAllProdutosEmAberto(numero);
-        FecharVerProdutos();
+        produtosDaComandaSelecionados.Clear();
+        AbrirVerProdutos();
     }
     public async Task CadastrarNovoEmAberto()
     {
@@ -351,7 +374,10 @@
 
     public async Task LancarProduto()
     {
-        
+        if(produtosDaComandaSelecionados.Count > 0)
+        {
+            produtosDaComanda = produtosDaComandaSelecionados;
+        }
         foreach (var item in produtosDaComanda)
         {
             ProdutoVendido produtoAtualizado = new ProdutoVendido();
@@ -361,7 +387,6 @@
             produtoAtualizado.Desconto = 0;
             produtosLancados.Add(produtoAtualizado);
         }
-
     }
 
     public async Task ConfirmarVenda()
@@ -386,13 +411,7 @@
                 }
             }
         }
-        if (faltaPagar > 0)
-        {
-            openCloseModalMensagem();
-            textoModalMensagem = $"Ainda faltam R${faltaPagar} do valor TOTAL para concluir.";
-            carregandoVenda = false;
-        }
-        else if (metodoDePagamentoNulo)
+        if (metodoDePagamentoNulo)
         {
             openCloseModalMensagem();
             textoModalMensagem = "Todas as formas de pagamento devem ser selecionadas.";
@@ -433,20 +452,22 @@
                     List<ProdutoVendido> listaDeProdutos = new List<ProdutoVendido>(produtosLancados);
                     List<FormaDePagamento> listaDeFormasDePagamentos = new List<FormaDePagamento>(formasDePagamento);
                     Venda vendaModal = new();
-                    vendaModal.Total = total;
+                    vendaModal.Total = total - faltaPagar;
                     vendaModal.Descontos = descontoTotal;
                     vendaModal.Caixa = caixaAtual;
                     vendaModal.IdCliente = cliente.Id;
                     vendaModal.NomeDoCliente = cliente.Nome;
+                    if (faltaPagar > 0) listaDeProdutos.Clear();
+                    await VendaServices.AddVendaAsync(vendaModal, listaDeProdutos, listaDeFormasDePagamentos);
+                    abrirModalVenda = false;
+                    if (produtosDaComandaSelecionados.Count > 0) await EmabertoServices.RemoveProdutoEmAberto(produtosDaComanda, numeroComanda);
+                    if (faltaPagar > 0) await EmabertoServices.EditarComanda(numeroComanda, (total - faltaPagar));
                     produtosLancados.Clear();
                     formasDePagamento.Clear();
                     total = 0;
                     descontoTotal = 0;
-                    await VendaServices.AddVendaAsync(vendaModal, listaDeProdutos, listaDeFormasDePagamentos);
-                    abrirModalVenda = false;
-                    toastService.ShowSuccess("Venda realizada com SUCESSO!");
                     carregandoVenda = false;
-                    await DeletarComanda(numeroDaComanda);
+                    toastService.ShowSuccess("Venda realizada com SUCESSO!");
                 }
 
             }
@@ -457,22 +478,24 @@
                 List<ProdutoVendido> listaDeProdutos = new List<ProdutoVendido>(produtosLancados);
                 List<FormaDePagamento> listaDeFormasDePagamentos = new List<FormaDePagamento>(formasDePagamento);
                 Venda vendaModal = new();
-                vendaModal.Total = total;
+                vendaModal.Total = total - faltaPagar;
                 vendaModal.Descontos = descontoTotal;
                 vendaModal.Caixa = caixaAtual;
-
                 if (cliente != null) { vendaModal.NomeDoCliente = cliente.Nome; }
+                if (faltaPagar > 0) listaDeProdutos.Clear();
+                await VendaServices.AddVendaAsync(vendaModal, listaDeProdutos, listaDeFormasDePagamentos);
+                abrirModalVenda = false;
+                if (produtosDaComandaSelecionados.Count > 0) await EmabertoServices.RemoveProdutoEmAberto(produtosDaComanda, numeroComanda);
+                if (faltaPagar > 0) await EmabertoServices.EditarComanda(numeroComanda, (total - faltaPagar));
                 produtosLancados.Clear();
                 formasDePagamento.Clear();
                 total = 0;
                 descontoTotal = 0;
-                await VendaServices.AddVendaAsync(vendaModal, listaDeProdutos, listaDeFormasDePagamentos);
-                abrirModalVenda = false;
-                toastService.ShowSuccess("Venda realizada com SUCESSO!");
                 carregandoVenda = false;
-                await DeletarComanda(numeroDaComanda);
+                toastService.ShowSuccess("Venda realizada com SUCESSO!");
+
             }
-            NavigationManager.NavigateTo(NavigationManager.Uri, true);
+
 
         }
     }
@@ -558,16 +581,47 @@
     public void FecharModalDeVenda()
     {
         abrirModalVenda = false;
+        total = 0;
+        totalfixo = 0;
+        faltaPagar = total;
+        FecharVerProdutos();
     }
 
-    public async Task AbrirModalDeVenda(decimal totalComanda, int numero)
+    public async Task AbrirModalDeVenda(decimal totalDaComanda, int numero, bool selecaoProdutos = false)
     {
-        produtosDaComanda = await EmabertoServices.GetAllProdutosEmAberto(numero);
-        total = totalComanda;
-        totalfixo = totalComanda;
+        verProdutos = false;
+        numeroComanda = numero;
+        if (!selecaoProdutos)
+        {
+            produtosDaComandaSelecionados.Clear();
+            produtosDaComanda = await EmabertoServices.GetAllProdutosEmAberto(numero);
+            total = totalDaComanda;
+            totalfixo = totalDaComanda;
+        }
+        else
+        {
+            produtosDaComanda = produtosDaComandaSelecionados;
+            total = 0;
+            foreach (var item in produtosDaComanda)
+            {
+
+                total += (decimal)item.total;
+
+            }
+            if (total > totalComanda) total = totalComanda;
+            totalfixo = total;
+        }
         faltaPagar = total;
         abrirModalVenda = true;
 
         numeroDaComanda = numero;
+    }
+
+    public void SelecionarProduto(HashSet<ProdutosEmAberto> items)
+    {
+        foreach (var item in items)
+        {
+            produtosDaComandaSelecionados.Add(item);
+        }
     }
 }
