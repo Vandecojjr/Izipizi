@@ -23,6 +23,7 @@ namespace Comandas.Data.Models
         public Guid MetodoId { get; set; }
         public string MetodoNome { get; set; }
         public virtual Caixa? Caixa { get; set; }
+        public bool Despesa { get; set; }
 
     }
 }

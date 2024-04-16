@@ -20,6 +20,9 @@ namespace Comandas.Data.Models
         public decimal? Lucro { get; set; }
         public Guid? VendaId { get; set; }
         public virtual Venda? Venda { get; set; }
+        public bool Despesa { get; set; }
+        public DateTime DespesaDate { get; set;}
+        public string IdDoUsuario { get; set; }
 
     }
 

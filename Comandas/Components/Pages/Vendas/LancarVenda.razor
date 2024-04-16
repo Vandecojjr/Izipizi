@@ -10,6 +10,7 @@
 @inject IUsuarioServices UsuarioServices
 @inject IClienteServices ClienteServices
 @inject IEmAbertoServices EmabertoServices
+@inject IProdutoVendidoServices ProdutoVendidoService
 @inject IJSRuntime JSRuntime
 
 @using Blazored.Toast.Configuration
@@ -357,7 +358,13 @@ else if (bloqueioModal)
 @* --------------------------------------------- *@
 
     <MudPaper Class="p-3 mb-3">
-            <div class="d-flex justify-content-end"><MudIconButton Icon="@Icons.Material.Filled.Info" OnClick="AbreInfoAtalhos" Size="Size.Small" Color="Color.Info" aria-label="informacoes"></MudIconButton></div>
+            <div class="d-flex justify-content-end">
+                @if (emAbertoParametro == 0)
+                {
+                    <MudSwitch Label="Despesa" Color="Color.Success" @bind-Value="despesa"></MudSwitch>
+                    <MudSpacer/>
+                }
+                <MudIconButton Icon="@Icons.Material.Filled.Info" OnClick="AbreInfoAtalhos" Size="Size.Small" Color="Color.Info" aria-label="informacoes"></MudIconButton></div>
             @if (infoAtalhos)
             {
                 <MudAlert Severity="Severity.Info">
@@ -372,14 +379,6 @@ else if (bloqueioModal)
     <MudGrid>
         <MudItem sm="6" xs="12">
             <h5>Produto</h5>
-                    @* <BlazoredTypeahead MaximumSuggestions="20" onblur="@(() => NovoValor())" SearchMethod="buscar" @bind-Value="produtoSelecionado">
-                    <SelectedTemplate>
-                        Cod @context.Codigo ------- @context.Nome  ---- @context.Valor?.ToString("C", System.Globalization.CultureInfo.CreateSpecificCulture("pt-BR"))--------------- Qtd.(@context.Quantidade)
-                    </SelectedTemplate>
-                    <ResultTemplate>
-                        Cod @context.Codigo ------- <h5>@context.Nome  @context.Valor?.ToString("C", System.Globalization.CultureInfo.CreateSpecificCulture("pt-BR"))</h5> --------------- Qtd.(@context.Quantidade)
-                    </ResultTemplate>
-                </BlazoredTypeahead> *@
                 <div class="autocomplete">
                         <input @bind=selectedCustomerName @onfocus="GanhouFoco" @onclick=@(_ => clicarNoAutocomplite()) @oninput=HandleInput class="form-control filter" id="autoComplit-input" @onkeydown=HandleKeyDown autocomplete="off" />
                     @if (produtosAutoComplete.Count > 0)
@@ -441,14 +440,22 @@ else if (bloqueioModal)
             <MudPaper Class="d-flex align-center justify-center mud-width-full ">
                 @if (emAbertoParametro == 0)
                 {
-                        <MudButton OnClick="() => AbrirModalDeVenda()" FullWidth Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Sell" Size="Size.Large" Title="F4" Color="Color.Success"><h4>Vender</h4></MudButton>
-                        <MudIconButton Class="mx-2" Icon="@Icons.Material.Filled.FlashOn" OnClick="AbreVendaRapida" Title="Venda Express - F2 " Color="Color.Warning" aria-label="informacoes"></MudIconButton>
-                        <MudIconButton Class="mx-2" Icon="@Icons.Material.Filled.OpenInNew" OnClick="AbrirFecharModalDeixarEmAberto" Color="Color.Info" aria-label="informacoes"></MudIconButton>
+                    @if (despesa)
+                    {
+                            <MudButton OnClick="() => LancarDespesa()" FullWidth Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Sell" Size="Size.Large" Title="F4" Color="Color.Error"><h4>Lançar despesa</h4></MudButton>
+                    }
+                    else
+                    {
+
+                            <MudButton OnClick="() => AbrirModalDeVenda()" FullWidth Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Sell" Size="Size.Large" Title="F4" Color="Color.Success"><h4>Vender</h4></MudButton>
+                            <MudIconButton Class="mx-2" Icon="@Icons.Material.Filled.FlashOn" OnClick="AbreVendaRapida" Title="Venda Express - F2 " Color="Color.Warning" aria-label="informacoes"></MudIconButton>
+                            <MudIconButton Class="mx-2" Icon="@Icons.Material.Filled.OpenInNew" OnClick="AbrirFecharModalDeixarEmAberto" Color="Color.Info" aria-label="informacoes"></MudIconButton>
+                    }
                 }
                 else
                 {
                         <MudButton OnClick="AbrirFecharModalDeixarEmAberto" FullWidth Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Sell" Size="Size.Large" Title="F4" Color="Color.Info"><h4>Deixar em aberto</h4></MudButton>
-                    }
+                }
              </MudPaper>
          </MudItem>
          @foreach (var item in produtosLancados)
@@ -458,15 +465,19 @@ else if (bloqueioModal)
                     <h5>@item.Quantidade x @item.Nome</h5>
                 </MudItem>
                 <MudItem xs="4">
-                    @if (item.Desconto == null || item.Desconto == 0)
+                   @if (!item.Despesa)
                     {
-                        <h4 class="text-success">@((item.valor * item.Quantidade)?.ToString("C", System.Globalization.CultureInfo.CreateSpecificCulture("pt-BR")))</h4>
-                    }
-                    else
-                    {
-                        <h5 class="text-success">@(((item.valor * item.Quantidade) - item.Desconto)?.ToString("C", System.Globalization.CultureInfo.CreateSpecificCulture("pt-BR")))</h5>
-                        <h8 class="text-success"><s>@((item.valor * item.Quantidade)?.ToString("C", System.Globalization.CultureInfo.CreateSpecificCulture("pt-BR")))</s></h8>
-                        <h8 class="text-danger"> -@item.Desconto?.ToString("C", System.Globalization.CultureInfo.CreateSpecificCulture("pt-BR"))</h8>
+
+                            @if (item.Desconto == null || item.Desconto == 0)
+                            {
+                                <h4 class="text-success">@((item.valor * item.Quantidade)?.ToString("C", System.Globalization.CultureInfo.CreateSpecificCulture("pt-BR")))</h4>
+                            }
+                            else
+                            {
+                                <h5 class="text-success">@(((item.valor * item.Quantidade) - item.Desconto)?.ToString("C", System.Globalization.CultureInfo.CreateSpecificCulture("pt-BR")))</h5>
+                                <h8 class="text-success"><s>@((item.valor * item.Quantidade)?.ToString("C", System.Globalization.CultureInfo.CreateSpecificCulture("pt-BR")))</s></h8>
+                                <h8 class="text-danger"> -@item.Desconto?.ToString("C", System.Globalization.CultureInfo.CreateSpecificCulture("pt-BR"))</h8>
+                            }
                     }
                 </MudItem>
                 <MudItem Class="ps-4">
@@ -499,6 +510,8 @@ window.scrollToSelectedOption = function (selectedIndex) {
 
 
 @code {
+
+    public bool despesa { get; set; }
 
     [Parameter] public int emAbertoParametro { get; set; } = 0;
 
@@ -595,7 +608,7 @@ window.scrollToSelectedOption = function (selectedIndex) {
     {
         selectedIndex = 0;
         produtosAutoComplete = new();
-        
+
     }
 
     public bool receberComanda { get; set; }
@@ -814,7 +827,7 @@ window.scrollToSelectedOption = function (selectedIndex) {
 
     public async Task ConfirmarVenda()
     {
-       if (!carregandoVenda)
+        if (!carregandoVenda)
         {
             carregandoVenda = true;
             caixaAtual = await CaixaServices.GetCaixaAberto();
@@ -962,6 +975,14 @@ window.scrollToSelectedOption = function (selectedIndex) {
         await JSRuntime.InvokeVoidAsync("focusElementById", "autoComplit-input");
     }
 
+    public async Task LancarDespesa()
+    {
+        foreach (var item in produtosLancados)
+        {
+            await ProdutoVendidoService.AddProdutoVendidoAsync(item);
+        }
+            Atualiza();
+    }
 
     public async Task LancarProduto(Produto produto, int Qtn, decimal desc)
     {
@@ -1022,6 +1043,7 @@ window.scrollToSelectedOption = function (selectedIndex) {
                         produtoAtualizado.Quantidade = (int)Qtn;
                         produtoAtualizado.Desconto = desc;
                         produtoAtualizado.valor = valorAlterar;
+                        if (despesa) produtoAtualizado.Despesa = true;
                         produtosLancados.Add(produtoAtualizado);
                     }
                 }
@@ -1043,6 +1065,7 @@ window.scrollToSelectedOption = function (selectedIndex) {
                     produtoAtualizado.Quantidade = (int)Qtn;
                     produtoAtualizado.Desconto = desc;
                     produtoAtualizado.valor = valorAlterar;
+                    if (despesa) produtoAtualizado.Despesa = true;
                     produtosLancados.Add(produtoAtualizado);
                 }
             }

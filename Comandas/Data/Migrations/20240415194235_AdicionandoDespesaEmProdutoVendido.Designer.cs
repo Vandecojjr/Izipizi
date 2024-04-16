@@ -4,6 +4,7 @@ using Comandas.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Comandas.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240415194235_AdicionandoDespesaEmProdutoVendido")]
+    partial class AdicionandoDespesaEmProdutoVendido
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -469,18 +472,11 @@ namespace Comandas.Migrations
                     b.Property<decimal?>("Desconto")
                         .HasColumnType("decimal(10, 2)");
 
-                    b.Property<bool>("Despesa")
+                    b.Property<bool>("Dispesacao")
                         .HasColumnType("bit");
-
-                    b.Property<DateTime>("DespesaDate")
-                        .HasColumnType("datetime2");
 
                     b.Property<Guid>("IdDoProduto")
                         .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("IdDoUsuario")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
 
                     b.Property<decimal?>("Lucro")
                         .HasColumnType("decimal(10, 2)");
@@ -557,9 +553,6 @@ namespace Comandas.Migrations
 
                     b.Property<DateTime>("Data")
                         .HasColumnType("datetime2");
-
-                    b.Property<bool>("Despesa")
-                        .HasColumnType("bit");
 
                     b.Property<Guid>("MetodoId")
                         .HasColumnType("uniqueidentifier");

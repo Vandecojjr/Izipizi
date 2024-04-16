@@ -82,6 +82,13 @@
                     <h1 class="d-flex justify-content-center text-light">@(string.Format("{0:C}", perdaTotal))</h1>
             </MudPaper>
         </MudItem>
+       <MudItem xs="12" sm="12" md="12">
+                <MudPaper Elevation="2" Class="pa-4" Style="background:#1C7293;">
+                <H6 class="d-flex justify-content-center text-light">Despesas</H6>
+                <MudDivider/>
+                    <h1 class="d-flex justify-content-center text-light">@(string.Format("{0:C}", despesas))</h1>
+            </MudPaper>
+        </MudItem>
     </MudGrid>
 </MudContainer>
 }
@@ -120,6 +127,7 @@ else
     public decimal? totalDeLucro = 0;
     public decimal? ticketMedio = 0;
     public decimal? perdaTotal = 0;
+    public decimal? despesas = 0;
     public int? totalProdutoEmEstoque = 0;
 
 
@@ -180,6 +188,7 @@ else
         await ProdutosMaisVendidos();
         await ProdutosMaisVendidos2();
         await TicketMedio();
+        despesas = await ProdutosVendidosServices.TotalDeDispesasPorPeriodo(dataInicial, dataFinal);
     }
 
 
