@@ -462,6 +462,7 @@
                     abrirModalVenda = false;
                     if (produtosDaComandaSelecionados.Count > 0) await EmabertoServices.RemoveProdutoEmAberto(produtosDaComanda, numeroComanda);
                     if (faltaPagar > 0) await EmabertoServices.EditarComanda(numeroComanda, (total - faltaPagar));
+                    else await EmabertoServices.DeletarEmAberto(numeroComanda);
                     produtosLancados.Clear();
                     formasDePagamento.Clear();
                     total = 0;
@@ -487,6 +488,7 @@
                 abrirModalVenda = false;
                 if (produtosDaComandaSelecionados.Count > 0) await EmabertoServices.RemoveProdutoEmAberto(produtosDaComanda, numeroComanda);
                 if (faltaPagar > 0) await EmabertoServices.EditarComanda(numeroComanda, (total - faltaPagar));
+                else await EmabertoServices.DeletarEmAberto(numeroComanda);
                 produtosLancados.Clear();
                 formasDePagamento.Clear();
                 total = 0;
@@ -495,7 +497,7 @@
                 toastService.ShowSuccess("Venda realizada com SUCESSO!");
 
             }
-
+            EmAbertos = await EmabertoServices.GetAllEmAberto();
 
         }
     }
