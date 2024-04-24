@@ -398,6 +398,8 @@
         bool aprazo = false;
         decimal totalPrazo = 0;
 
+        faltaPagar = Math.Round(faltaPagar, 2);
+
         foreach (var item in formasDePagamento)
         {
             if (item.MetodoDePagamentoId == Guid.Empty) metodoDePagamentoNulo = true;

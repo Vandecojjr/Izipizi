@@ -666,7 +666,7 @@ window.scrollToSelectedOption = function (selectedIndex) {
 
     DefaultFocus DefaultFocus { get; set; } = DefaultFocus.FirstChild;
 
-    public void NovoValor() => valorAlterar = (decimal)produtoSelecionado.Valor;
+    public void NovoValor() => valorAlterar = Math.Round((decimal)produtoSelecionado.Valor, 2);
 
     public async void FocarNoAutoComplite() => await JSRuntime.InvokeVoidAsync("focusElementById", "autoComplit-input");
 
@@ -985,7 +985,8 @@ window.scrollToSelectedOption = function (selectedIndex) {
     }
 
     public async Task LancarProduto(Produto produto, int Qtn, decimal desc)
-    {
+    {   
+        valorAlterar = Math.Round(valorAlterar, 2);
         if ((int)Qtn <= 0)
         {
             toastService.ShowError("A quantidade do produto deve ser maior que zero!");
