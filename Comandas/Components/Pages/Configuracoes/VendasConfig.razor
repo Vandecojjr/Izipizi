@@ -1,6 +1,7 @@
 ﻿@rendermode InteractiveServer
 @inject IMetodoDePagamentoServices MetodoDePagamentoServices
 @inject IUsuarioServices UsuarioServices
+@inject IConfigServices ConfigServices
 @inject NavigationManager NavigationManager
 @attribute [StreamRendering]
 
@@ -130,6 +131,7 @@ else
         metodos = await MetodoDePagamentoServices.GetAllMetodosAsync();
         bool usuarioAtivo = await UsuarioServices.GetUsuarioAtivo();
         if (!usuarioAtivo) NavigationManager.NavigateTo("/pagamento");
+        await ConfigServices.GerarConfigAsync();
         carregando = false;
 
     }

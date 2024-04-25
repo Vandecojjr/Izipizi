@@ -12,6 +12,7 @@
 @inject IEmAbertoServices EmabertoServices
 @inject IProdutoVendidoServices ProdutoVendidoService
 @inject IJSRuntime JSRuntime
+@inject IConfigServices ConfigServices
 
 @using Blazored.Toast.Configuration
 @using Blazored.Typeahead
@@ -215,8 +216,8 @@ else if (bloqueioModal)
                         }   
                         else
                         {
-                <div class="modal-body">
-                    
+                         <div class="modal-body">
+
                     <div>
                     <MudSwitch Label="Dividir conta" @bind-Value="dividirConta" Color="Color.Primary" Class="mr-n2 mb-6"/>
                     </div>
@@ -233,19 +234,41 @@ else if (bloqueioModal)
                     }
                     <MudDivider/>
                     <MudPaper Elevation="0" Class="m-3">
+                                @if (config.VendaRapida)
+                                {
+                                    <MudAlert Severity="Severity.Info">
+                                        <strong>F2</strong> Dinheiro,
+                                        <strong>F4</strong> Pix,
+                                        <strong>F8</strong> Crédito,
+                                        <strong>F9</strong> Debito.
+                                        <strong>Enter</strong> Finaliza venda.
+                                    </MudAlert>
+                                    <hr />
+                                }
                         <MudFocusTrap Disabled="false" DefaultFocus="DefaultFocus.FirstChild">
                         @foreach (var item in formasDePagamento)
                         {
-                            <label for="metodoDePagamento"><h6>Forma de pagamento</h6></label>
-                            <InputSelect id="metodoDePagamento" class="form-control" @bind-Value="item.MetodoDePagamentoId">
-                                @foreach (var metodo in metodosDePagamento)
-                                {
-                                    <option value="@metodo.Id">@metodo.Nome</option>
-                                }
-                            </InputSelect>
-                            <label for="valor"><h6>Valor</h6></label>
-                            <InputNumber @onblur="AtualizaFaltaPagar" @onkeydown="@(e => CompletaValorDoInput(item, e))" id="valor" class="form-control mb-2" @bind-Value="item.Valor"></InputNumber>
-                            <MudButton OnClick="() => RemoveFormaDePagamento(item)" Class="mx-3" Variant="Variant.Text" StartIcon="@Icons.Material.Filled.Delete" Color="Color.Error"></MudButton>
+                            @if (!config.VendaRapida)
+                            { 
+                                <label for="metodoDePagamento"><h6>Forma de pagamento</h6></label>
+                                <InputSelect id="metodoDePagamento" class="form-control" @bind-Value="item.MetodoDePagamentoId">
+                                    @foreach (var metodo in metodosDePagamento)
+                                    {
+                                        <option value="@metodo.Id">@metodo.Nome</option>
+                                    }
+                                </InputSelect>
+                                <label for="valor"><h6>Valor</h6></label>
+                                <InputNumber @onblur="AtualizaFaltaPagar" @onkeydown="@(e => CompletaValorDoInput(item, e))" id="valor" class="form-control mb-2" @bind-Value="item.Valor"></InputNumber>
+                                <MudButton OnClick="() => RemoveFormaDePagamento(item)" Class="mx-3" Variant="Variant.Text" StartIcon="@Icons.Material.Filled.Delete" Color="Color.Error"></MudButton>
+                            }
+                            else
+                            {
+                                            
+                               <div class="input-group input-group-sm mb-3">
+                                    <span class="input-group-text" id="inputGroup-sizing-sm">@item.NomeDoMetodo</span>
+                                    <InputNumber @onblur="AtualizaFaltaPagar" @onkeydown="@(e => CompletaValorDoInput(item, e))" id="@item.NomeDoMetodo" class="form-control" @bind-Value="item.Valor"></InputNumber>
+                               </div>
+                            }
                         }
                         </MudFocusTrap>
                          <MudPaper Elevation="0" Class="m-3">
@@ -263,7 +286,11 @@ else if (bloqueioModal)
                          </MudPaper>
                     </MudPaper>
                     <MudPaper Elevation="0" Class="d-flex">
+                                @if (!config.VendaRapida)
+                                {
+                        
                                     <MudButton OnClick="() => AdicionarFormaDePagamento()" Title="Ctrl + q" Class="mx-2" Variant="Variant.Text" StartIcon="@Icons.Material.Filled.Add" Color="Color.Success">Forma de pagamento</MudButton>
+                                }
                         <MudSwitch Label="Alterar Valor" @bind-Value="alterarDesconto" Color="Color.Primary" Class="mr-n2 ms-10" />
                     </MudPaper>
 
@@ -315,7 +342,7 @@ else if (bloqueioModal)
                         }
                         else
                         {
-                                    <MudButton OnClick="() => ConfirmarVenda()" Class="mx-3" Variant="Variant.Filled" Title="F4" StartIcon="@Icons.Material.Filled.AttachMoney" Color="Color.Success">Confirmar</MudButton>
+                            <MudButton OnClick="() => ConfirmarVenda()" Class="mx-3" Variant="Variant.Filled" Title="Enter" StartIcon="@Icons.Material.Filled.AttachMoney" Color="Color.Success">Confirmar</MudButton>
                             <MudButton OnClick="() => FecharModalDeVenda()" Variant="Variant.Filled">Cancelar</MudButton>
                             @if (baixando)
                             {
@@ -327,6 +354,7 @@ else if (bloqueioModal)
                             }
                         }
                 </div>
+                    
                 }
             </div>
             
@@ -419,8 +447,6 @@ else if (bloqueioModal)
             </MudFocusTrap>
 </MudPaper>
 
-
-
     @if (produtosLancados.Count != 0)
 {
         <MudGrid Class="pt-4 mb-3" Spacing="1" @onkeydown="HandleKeyDown">
@@ -504,6 +530,9 @@ window.scrollToSelectedOption = function (selectedIndex) {
         selectedOption.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
 }
+    window.removeFocus = function () {
+        document.activeElement.blur();
+    }
 </script>
 
 
@@ -645,6 +674,8 @@ window.scrollToSelectedOption = function (selectedIndex) {
     bool Disabled { get; set; }
     Guid clienteId { get; set; }
     Cliente NovoCliente = new();
+    Configuracao config = new();
+
 
     decimal valorAlterar { get; set; }
 
@@ -697,6 +728,18 @@ window.scrollToSelectedOption = function (selectedIndex) {
     }
     public void openCloseModalMensagem() => modalMensagem = !modalMensagem;
 
+    public void MetodosDePagamentoVendasRapidas()
+    {
+        formasDePagamento.Clear();
+        foreach (var item in metodosDePagamento)
+        {
+            FormaDePagamento forma = new();
+            forma.MetodoDePagamentoId = item.Id;
+            forma.NomeDoMetodo = item.Nome;
+            formasDePagamento.Add(forma);
+        }
+    }
+
     protected override async Task OnInitializedAsync() 
     { 
 
@@ -710,6 +753,8 @@ window.scrollToSelectedOption = function (selectedIndex) {
         clientes = await ClienteServices.ObterTodos();
         ContasEmAberto = await EmabertoServices.GetAllEmAberto();
         usuarios = await UsuarioServices.GetUsuariosDaConta();
+        config = await ConfigServices.ObterConfigAsync();
+        if(config == null){ config = new(); }
         carregando = false;
     }
 
@@ -718,31 +763,38 @@ window.scrollToSelectedOption = function (selectedIndex) {
 
         if (e.Key == "Enter")
         {
-
-            if(produtoSelecionado == null)
+            if (abrirModalVenda && !vendaRapida)
             {
-                if(produtosAutoComplete.Count > 0) SelectCustomer(produtosAutoComplete[selectedIndex].Id);
-
+                await JSRuntime.InvokeVoidAsync("focusElementById", "Dinheiro");
+                await ConfirmarVenda();
             }
             else
             {
-                await JSRuntime.InvokeVoidAsync("focusElementById", "autoComplit-input");
-                // Execute ação desejada, por exemplo, salvar os dados
-                await Task.Run(() =>
+
+                if(produtoSelecionado == null)
                 {
+                    if(produtosAutoComplete.Count > 0) SelectCustomer(produtosAutoComplete[selectedIndex].Id);
 
-                    LancarProduto(produtoSelecionado, quantidade, desconto);
-                });
+                }
+                else
+                {
+                    await JSRuntime.InvokeVoidAsync("focusElementById", "autoComplit-input");
+                    // Execute ação desejada, por exemplo, salvar os dados
+                    await Task.Run(() =>
+                    {
+
+                        LancarProduto(produtoSelecionado, quantidade, desconto);
+                    });
+                }
             }
-
         }
         else if (e.Key == "F4")
         {
             if (produtosLancados.Count > 0)
             {
-                if (abrirModalVenda && !vendaRapida)
+                if (abrirModalVenda && !vendaRapida && config.VendaRapida)
                 {
-                    await ConfirmarVenda();
+                    await JSRuntime.InvokeVoidAsync("focusElementById", "Pix");
                 }
                 else if (vendaRapida && produtosLancados.Count > 0)
                 {
@@ -758,7 +810,7 @@ window.scrollToSelectedOption = function (selectedIndex) {
         }
         else if (e.Key == "F2")
         {
-            if (produtosLancados.Count > 0 && !vendaRapida)
+            if (produtosLancados.Count > 0 && !vendaRapida && !abrirModalVenda)
             {
                 AbreVendaRapida();
             }
@@ -767,6 +819,11 @@ window.scrollToSelectedOption = function (selectedIndex) {
                 Guid metodoPagamentoId = metodosDePagamento[0].Id;
                 await LancarVendaRapida(metodoPagamentoId);
             }
+            else if (abrirModalVenda && !vendaRapida && config.VendaRapida)
+            {
+                await JSRuntime.InvokeVoidAsync("focusElementById", "Dinheiro");
+            }
+
         }
         else if (e.Key == "Escape")
         {
@@ -789,6 +846,10 @@ window.scrollToSelectedOption = function (selectedIndex) {
                 Guid metodoPagamentoId = metodosDePagamento[2].Id;
                 await LancarVendaRapida(metodoPagamentoId);
             }
+            else if (abrirModalVenda && !vendaRapida && config.VendaRapida)
+            {
+                await JSRuntime.InvokeVoidAsync("focusElementById", "Credito");
+            }
         }
         else if (e.Key == "F9")
         {
@@ -796,6 +857,10 @@ window.scrollToSelectedOption = function (selectedIndex) {
             {
                 Guid metodoPagamentoId = metodosDePagamento[3].Id;
                 await LancarVendaRapida(metodoPagamentoId);
+            }
+            else if (abrirModalVenda && !vendaRapida && config.VendaRapida)
+            {
+                await JSRuntime.InvokeVoidAsync("focusElementById", "Debito");
             }
         }
         else if (e.Key == "ArrowDown")
@@ -822,6 +887,7 @@ window.scrollToSelectedOption = function (selectedIndex) {
     {
         faltaPagar = total;
         abrirModalVenda = true;
+        if (config.VendaRapida && !vendaRapida) { MetodosDePagamentoVendasRapidas(); }
     }
     public void ReceberComanda() => receberComanda = !receberComanda;
 
@@ -838,11 +904,12 @@ window.scrollToSelectedOption = function (selectedIndex) {
 
             foreach (var item in formasDePagamento)
             {
+                var valor = Math.Round(item.Valor, 2);
                 if (item.MetodoDePagamentoId == Guid.Empty) metodoDePagamentoNulo = true;
                 else
                 {
                     var metodoConfere = await MetodoDePagamentoServices.GetMetodoDePagamentoAsync(item.MetodoDePagamentoId);
-                    if (metodoConfere.Nome == "A prazo")
+                    if (metodoConfere.Nome == "A prazo" && valor > 0)
                     {
                         aprazo = true;
                         totalPrazo += item.Valor;
@@ -981,7 +1048,7 @@ window.scrollToSelectedOption = function (selectedIndex) {
         {
             await ProdutoVendidoService.AddProdutoVendidoAsync(item);
         }
-            Atualiza();
+        Atualiza();
     }
 
     public async Task LancarProduto(Produto produto, int Qtn, decimal desc)

@@ -94,13 +94,16 @@ namespace Comandas.Services
             decimal Conferetroco = 0;
             foreach (var item in formasDePagamento)
             {
-                var nomeDoMetodo = await _context.MetodosDePagamento.FirstOrDefaultAsync(x => x.Id == item.MetodoDePagamentoId);
-                Conferetroco += item.Valor;
-                if (nomeDoMetodo.Nome == "A prazo")
+                if (Math.Round(item.Valor) > 0)
                 {
-                    ajustaLimite += item.Valor;
+                    var nomeDoMetodo = await _context.MetodosDePagamento.FirstOrDefaultAsync(x => x.Id == item.MetodoDePagamentoId);
+                    Conferetroco += item.Valor;
+                    if (nomeDoMetodo.Nome == "A prazo")
+                    {
+                        ajustaLimite += item.Valor;
+                    }
+                    await _formaDePagamentoServices.AddFormaDePAgamento(item, venda);
                 }
-                await _formaDePagamentoServices.AddFormaDePAgamento(item, venda);
             }
             if (cliente != null)
             {

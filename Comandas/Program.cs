@@ -33,6 +33,7 @@ builder.Services.AddScoped<ITransacaoServices, TransacaoServices>();
 builder.Services.AddScoped<IUsuarioServices, UsuarioServices>();
 builder.Services.AddScoped<IClienteServices, ClienteServices>();
 builder.Services.AddScoped<IEmAbertoServices, EmAbertoServices>();
+builder.Services.AddScoped<IConfigServices, ConfigServices>();
 
 
 
