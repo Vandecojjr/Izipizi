@@ -6,5 +6,6 @@
         public string IdUsuario { get; set; }
 
         public bool VendaRapida {  get; set; }
+        public bool VerListaDeProdutos { get; set; }
     }
 }

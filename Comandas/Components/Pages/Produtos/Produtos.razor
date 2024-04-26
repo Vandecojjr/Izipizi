@@ -15,7 +15,7 @@
 @rendermode InteractiveServer
 <PageTitle>Produtos</PageTitle>
 
-@if (produtos.Count == 0)
+@if (carregando)
 {
     <MudProgressLinear Color="Color.Info" Indeterminate="true"/>
 }

@@ -484,31 +484,73 @@ else if (bloqueioModal)
                 }
              </MudPaper>
          </MudItem>
-         @foreach (var item in produtosLancados)
+       @if (!config.VerListaDeProdutos)
         {
-            <MudPaper Height="70px" Class="d-flex align-center justify-center mud-width-full my-2 px-1" @onclick=FocarNoAutoComplite>
-                <MudItem Class="py-0" xs="8">
-                    <h5>@item.Quantidade x @item.Nome</h5>
-                </MudItem>
-                <MudItem xs="4">
-                   @if (!item.Despesa)
-                    {
+                @foreach (var item in produtosLancados)
+                {
+                    <MudPaper Height="70px" Class="d-flex align-center justify-center mud-width-full my-2 px-1" @onclick=FocarNoAutoComplite>
+                        <MudItem Class="py-0" xs="8">
+                            <h5>@item.Quantidade x @item.Nome</h5>
+                        </MudItem>
+                        <MudItem xs="4">
+                            @if (!item.Despesa)
+                            {
 
-                            @if (item.Desconto == null || item.Desconto == 0)
-                            {
-                                <h4 class="text-success">@((item.valor * item.Quantidade)?.ToString("C", System.Globalization.CultureInfo.CreateSpecificCulture("pt-BR")))</h4>
+                                @if (item.Desconto == null || item.Desconto == 0)
+                                {
+                                    <h4 class="text-success">@((item.valor * item.Quantidade)?.ToString("C", System.Globalization.CultureInfo.CreateSpecificCulture("pt-BR")))</h4>
+                                }
+                                else
+                                {
+                                    <h5 class="text-success">@(((item.valor * item.Quantidade) - item.Desconto)?.ToString("C", System.Globalization.CultureInfo.CreateSpecificCulture("pt-BR")))</h5>
+                                    <h8 class="text-success"><s>@((item.valor * item.Quantidade)?.ToString("C", System.Globalization.CultureInfo.CreateSpecificCulture("pt-BR")))</s></h8>
+                                    <h8 class="text-danger"> -@item.Desconto?.ToString("C", System.Globalization.CultureInfo.CreateSpecificCulture("pt-BR"))</h8>
+                                }
                             }
-                            else
+                        </MudItem>
+                        <MudItem Class="ps-4">
+                            <MudIconButton OnClick="() => ConfirmarExclusaoDoItem(item.IdDoProduto)" Size="Size.Medium" Color="Color.Error" Icon="@Icons.Material.Filled.Delete" aria-label="delete"></MudIconButton>
+                        </MudItem>
+                    </MudPaper>
+
+                }
+            }
+            else
+        {
+            <MudPaper Width="100%">
+                <div class="table-responsive">
+                        <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Qtd</th>
+                                <th>Produto</th>
+                                <th>Valor</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in produtosLancados)
                             {
-                                <h5 class="text-success">@(((item.valor * item.Quantidade) - item.Desconto)?.ToString("C", System.Globalization.CultureInfo.CreateSpecificCulture("pt-BR")))</h5>
-                                <h8 class="text-success"><s>@((item.valor * item.Quantidade)?.ToString("C", System.Globalization.CultureInfo.CreateSpecificCulture("pt-BR")))</s></h8>
-                                <h8 class="text-danger"> -@item.Desconto?.ToString("C", System.Globalization.CultureInfo.CreateSpecificCulture("pt-BR"))</h8>
+                                <tr>
+                                    <td>@item.Quantidade</td>
+                                    <td>@item.Nome</td>
+                                    @if (!item.Despesa)
+                                    {
+                                        @if (item.Desconto == null || item.Desconto == 0)
+                                        {
+                                            <td class="text-success">@((item.valor * item.Quantidade)?.ToString("C", System.Globalization.CultureInfo.CreateSpecificCulture("pt-BR")))</td>
+                                        }
+                                        else
+                                        {
+                                            <td class="text-success">@(((item.valor * item.Quantidade) - item.Desconto)?.ToString("C", System.Globalization.CultureInfo.CreateSpecificCulture("pt-BR")))</td>
+                                        }
+                                    }
+                                        <td><MudIconButton OnClick="() => ConfirmarExclusaoDoItem(item.IdDoProduto)" Size="Size.Small" Color="Color.Error" Icon="@Icons.Material.Filled.Delete" aria-label="delete"></MudIconButton></td>
+                                </tr>
                             }
-                    }
-                </MudItem>
-                <MudItem Class="ps-4">
-                    <MudIconButton OnClick="() => ConfirmarExclusaoDoItem(item.IdDoProduto)" Size="Size.Medium" Color="Color.Error" Icon="@Icons.Material.Filled.Delete" aria-label="delete"></MudIconButton>
-                </MudItem>
+                        </tbody>
+                     </table>
+                </div>
             </MudPaper>
         }
     </MudGrid>

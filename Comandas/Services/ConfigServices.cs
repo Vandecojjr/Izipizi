@@ -1,4 +1,5 @@
 ﻿
+using Comandas.Components.Pages.Categorias;
 using Comandas.Data;
 using Comandas.Data.Models;
 using Microsoft.EntityFrameworkCore;
@@ -14,6 +15,18 @@ namespace Comandas.Services
         {
             _context = context;
             _user = user;
+        }
+
+        public async Task EditarConfig(Configuracao configuracao)
+        {
+            try
+            {
+                _context.Entry(configuracao).State = EntityState.Modified;
+                await _context.SaveChangesAsync();
+            }
+            catch
+            { 
+            }
         }
 
         public async Task GerarConfigAsync()

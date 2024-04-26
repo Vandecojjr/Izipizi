@@ -111,6 +111,18 @@ else
                 <MudButton  OnClick="() => AbrirOuFecharModalMetodoDePagamento()" Variant="Variant.Filled">Novo Metodo</MudButton>
             </MudPaper>
         </MudItem>
+            <MudItem sm="12" xs="12" xl="12" md="12">
+                <MudPaper Elevation="2" Class="px-2 py-2">
+                    <h5>Confg. da tela principal de venda</h5>
+                    <hr/>
+                    <div class="d-flex">
+                        <MudSwitch Label="Fechamento simples" Color="Color.Success" @bind-Value="config.VendaRapida"></MudSwitch>
+                        <MudSwitch Label="Listagem simples" Color="Color.Success" @bind-Value="config.VerListaDeProdutos"></MudSwitch>
+                        <MudSpacer></MudSpacer>
+                        <MudButton OnClick="() => EditarConfiguracao()" Variant="Variant.Filled">Salvar</MudButton>
+                    </div>
+                </MudPaper>
+        </MudItem>
     </MudGrid>
 </MudContainer>
 }
@@ -119,6 +131,7 @@ else
     public bool abrirModalNovoMetodo = false;
     List<MetodoDePagamento> metodos = new List<MetodoDePagamento>(); 
     MetodoDePagamento metodo = new();
+    Configuracao config = new();
 
     bool editar = false;
     bool deletar = false;
@@ -131,7 +144,7 @@ else
         metodos = await MetodoDePagamentoServices.GetAllMetodosAsync();
         bool usuarioAtivo = await UsuarioServices.GetUsuarioAtivo();
         if (!usuarioAtivo) NavigationManager.NavigateTo("/pagamento");
-        await ConfigServices.GerarConfigAsync();
+        config =  await ConfigServices.ObterConfigAsync();
         carregando = false;
 
     }
@@ -191,6 +204,9 @@ else
         await MetodoDePagamentoServices.Deletar(id);
     }
 
-
+    public async Task EditarConfiguracao()
+    {
+        await ConfigServices.EditarConfig(config);
+    }
 
 }

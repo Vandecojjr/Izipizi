@@ -6,5 +6,6 @@ namespace Comandas.Services
     {
         Task GerarConfigAsync();
         Task<Configuracao> ObterConfigAsync();
+        Task EditarConfig(Configuracao configuracao);
     }
 }

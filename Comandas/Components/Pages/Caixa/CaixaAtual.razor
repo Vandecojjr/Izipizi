@@ -160,7 +160,8 @@
                 </div>
                 <div class="pa-3">
                     <label for="metodo">Metodo da transação</label>
-                    <InputSelect id="metodo" class="form-control" @bind-Value="NovaTransacao.MetodoId">
+                    <InputSelect id="metodo" class="form-select" @bind-Value="NovaTransacao.MetodoId">
+                        <option selected>Escolha o metodo de pagamento</option>
                         @if (metodosDePagamento != null)
                         {
                             @foreach (var item in metodosDePagamento)
@@ -243,7 +244,8 @@
                             <label for="valor">Valor da transação</label>
                             <InputNumber id="valor" @bind-Value="NovaTransacao.Valor" class="form-control"></InputNumber>
                             <label for="metodo">Metodo da transação</label>
-                            <InputSelect id="metodo" class="form-control" @bind-Value="NovaTransacao.MetodoId">
+                             <select id="metodo" class="form-select" @bind="NovaTransacao.MetodoId">
+                            <option selected>Open this select menu</option>
                                 @if (metodosDePagamento != null)
                                 {
                                     @foreach (var item in metodosDePagamento)
@@ -251,7 +253,7 @@
                                         <option value="@item.Id">@item.Nome</option>
                                     }
                                 }
-                            </InputSelect>
+                            </select>
 
                         </div>
                         <div class="modal-footer">
