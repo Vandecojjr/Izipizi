@@ -449,14 +449,15 @@ else if (bloqueioModal)
 
     @if (produtosLancados.Count != 0)
 {
+        <div class="d-xl-flex d-md-flex">
         <MudGrid Class="pt-4 mb-3" Spacing="1" @onkeydown="HandleKeyDown">
-        <MudItem xs=12 sm=6>
+                <MudItem xs=12 sm=tamanhoTelaDeProdutos>
             <MudPaper Style="background:#C5E1A5;" @onclick=FocarNoAutoComplite Class="d-flex align-center justify-center mud-width-full py-3">
                 <h2 class="pe-5 text-success">Sub-Total</h2>
                 <h1 class="text-success">@total.ToString("C", System.Globalization.CultureInfo.CreateSpecificCulture("pt-BR"))</h1>
             </MudPaper>
         </MudItem>
-        <MudItem xs=12 sm=6>
+                <MudItem xs=12 sm=tamanhoTelaDeProdutos>
             <MudPaper Style="background:#B3E5FC;" @onclick=FocarNoAutoComplite Class="d-flex align-center justify-center mud-width-full py-3">
                 <h2 style="color:#01579B;" class="pe-5">Descontos</h2>
                 <h1 style="color:#01579B;">@descontoTotal.ToString("C", System.Globalization.CultureInfo.CreateSpecificCulture("pt-BR"))</h1>
@@ -515,45 +516,46 @@ else if (bloqueioModal)
 
                 }
             }
-            else
-        {
-            <MudPaper Width="100%">
-                <div class="table-responsive">
-                        <table class="table table-striped">
-                        <thead>
-                            <tr>
-                                <th>Qtd</th>
-                                <th>Produto</th>
-                                <th>Valor</th>
-                                <th></th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach (var item in produtosLancados)
-                            {
-                                <tr>
-                                    <td>@item.Quantidade</td>
-                                    <td>@item.Nome</td>
-                                    @if (!item.Despesa)
-                                    {
-                                        @if (item.Desconto == null || item.Desconto == 0)
-                                        {
-                                            <td class="text-success">@((item.valor * item.Quantidade)?.ToString("C", System.Globalization.CultureInfo.CreateSpecificCulture("pt-BR")))</td>
-                                        }
-                                        else
-                                        {
-                                            <td class="text-success">@(((item.valor * item.Quantidade) - item.Desconto)?.ToString("C", System.Globalization.CultureInfo.CreateSpecificCulture("pt-BR")))</td>
-                                        }
-                                    }
-                                        <td><MudIconButton OnClick="() => ConfirmarExclusaoDoItem(item.IdDoProduto)" Size="Size.Small" Color="Color.Error" Icon="@Icons.Material.Filled.Delete" aria-label="delete"></MudIconButton></td>
-                                </tr>
-                            }
-                        </tbody>
-                     </table>
-                </div>
-            </MudPaper>
-        }
     </MudGrid>
+            @if (config.VerListaDeProdutos)
+            {
+                <MudPaper Width="100%" Class="ms-1">
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Qtd</th>
+                                    <th>Produto</th>
+                                    <th>Valor</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var item in produtosLancados)
+                                {
+                                    <tr>
+                                        <td>@item.Quantidade</td>
+                                        <td>@item.Nome</td>
+                                        @if (!item.Despesa)
+                                        {
+                                            @if (item.Desconto == null || item.Desconto == 0)
+                                            {
+                                                <td class="text-success">@((item.valor * item.Quantidade)?.ToString("C", System.Globalization.CultureInfo.CreateSpecificCulture("pt-BR")))</td>
+                                            }
+                                            else
+                                            {
+                                                <td class="text-success">@(((item.valor * item.Quantidade) - item.Desconto)?.ToString("C", System.Globalization.CultureInfo.CreateSpecificCulture("pt-BR")))</td>
+                                            }
+                                        }
+                                        <td><MudIconButton OnClick="() => ConfirmarExclusaoDoItem(item.IdDoProduto)" Size="Size.Small" Color="Color.Error" Icon="@Icons.Material.Filled.Delete" aria-label="delete"></MudIconButton></td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </MudPaper>
+            }
+        </div>
 }
 }
 
@@ -718,6 +720,7 @@ window.scrollToSelectedOption = function (selectedIndex) {
     Cliente NovoCliente = new();
     Configuracao config = new();
 
+    public int tamanhoTelaDeProdutos = 6;
 
     decimal valorAlterar { get; set; }
 
@@ -797,6 +800,7 @@ window.scrollToSelectedOption = function (selectedIndex) {
         usuarios = await UsuarioServices.GetUsuariosDaConta();
         config = await ConfigServices.ObterConfigAsync();
         if(config == null){ config = new(); }
+        if (config.VerListaDeProdutos) { tamanhoTelaDeProdutos = 12; }
         carregando = false;
     }
 
