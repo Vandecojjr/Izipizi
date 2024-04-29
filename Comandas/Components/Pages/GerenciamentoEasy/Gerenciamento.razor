@@ -2,6 +2,7 @@
 @attribute [Authorize(Roles = "EasyAdmin")]
 @attribute [StreamRendering]
 @inject IUsuarioServices UsuarioServices
+@inject IProdutoServices ProdutoServices
 @using Blazored.Toast.Configuration
 @using Blazored.Typeahead
 
@@ -324,7 +325,33 @@ else
             </MudPaper>
         </MudItem>
 
-        
+        <MudItem sm="12">
+            <MudPaper Class="p-2">
+                <h4>Clonar estoque de um perfil para o outro</h4>
+                <div class="m-2">
+                        <select class="form-select" aria-label="Default select example" @bind="doador">
+                            <option selected>Selecione o perfil doador</option>
+                            @foreach (var item in usuarios)
+                        {
+                            <option value="@item.Id">@item.Email</option>
+                        }
+                        </select>
+                </div>
+                <div class="d-flex justify-content-center">
+                    <MudIcon Icon="@Icons.Material.Filled.SwapVert"></MudIcon>
+                </div >
+                <div class="m-2">
+                        <select class="form-select" aria-label="Default select example" @bind="receptor">
+                            <option selected>Selecione o perfil receptor</option>
+                            @foreach (var item in usuarios)
+                        {
+                                <option value="@item.Id">@item.Email</option>
+                            }
+                        </select>
+                </div>
+                <MudButton OnClick="Clonagem">Clonar</MudButton>
+            </MudPaper>
+        </MudItem>
     </MudGrid>
 </MudContainer>
 }
@@ -343,6 +370,9 @@ else
     public bool novaSenha = false;
     public int usuariosLogados = 0;
     Usuario usuario = new();
+    string doador { get; set; }
+    string receptor { get; set; }
+
 
     public int totalDeEmpresas = 0;
 
@@ -412,7 +442,11 @@ else
             novaSenha = false;
             atualizar = false;
         }
-        
+
     }
 
+    public async Task Clonagem()
+    {
+        await ProdutoServices.ClonarProdutos(doador,receptor);
+    }
 }

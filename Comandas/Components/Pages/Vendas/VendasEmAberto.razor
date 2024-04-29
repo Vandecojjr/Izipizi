@@ -215,6 +215,7 @@
                         <PropertyColumn Property="x => x.DataDaVenda" Sortable="false" Title="Data" Filterable="false" />
                         <PropertyColumn Property="x => x.NomeProduto" Sortable="false" Title="Nome" Filterable="false" />
                         <PropertyColumn Property="x => x.Quantidade" Title="Qtd." Sortable="false" Filterable="false" />
+                        <PropertyColumn Property="x => x.total" Title="Valor." Format="C" Sortable="false" Filterable="false" />
                     </Columns>
                 </MudDataGrid>
                 @if (produtosDaComandaSelecionados.Count > 0)
@@ -498,9 +499,8 @@
                     if (faltaPagar > 0) listaDeProdutos.Clear();
                     await VendaServices.AddVendaAsync(vendaModal, listaDeProdutos, listaDeFormasDePagamentos);
                     abrirModalVenda = false;
-                    if (produtosDaComandaSelecionados.Count > 0) await EmabertoServices.RemoveProdutoEmAberto(produtosDaComanda, numeroComanda);
-                    if (faltaPagar > 0) await EmabertoServices.EditarComanda(numeroComanda, (total - faltaPagar));
-                    else await EmabertoServices.DeletarEmAberto(numeroComanda);
+                    if (produtosDaComandaSelecionados.Count > 0) await EmabertoServices.RemoveProdutoEmAberto(produtosDaComandaSelecionados, numeroComanda);
+                    if (faltaPagar > 0 || produtosDaComandaSelecionados.Count == 0) await EmabertoServices.EditarComanda(numeroComanda, (total - faltaPagar));
                     produtosLancados.Clear();
                     formasDePagamento.Clear();
                     total = 0;
@@ -524,9 +524,8 @@
                 if (faltaPagar > 0) listaDeProdutos.Clear();
                 await VendaServices.AddVendaAsync(vendaModal, listaDeProdutos, listaDeFormasDePagamentos);
                 abrirModalVenda = false;
-                if (produtosDaComandaSelecionados.Count > 0) await EmabertoServices.RemoveProdutoEmAberto(produtosDaComanda, numeroComanda);
-                if (faltaPagar > 0) await EmabertoServices.EditarComanda(numeroComanda, (total - faltaPagar));
-                else await EmabertoServices.DeletarEmAberto(numeroComanda);
+                if (produtosDaComandaSelecionados.Count > 0) await EmabertoServices.RemoveProdutoEmAberto(produtosDaComandaSelecionados, numeroComanda);
+                if (faltaPagar > 0 || produtosDaComandaSelecionados.Count == 0) await EmabertoServices.EditarComanda(numeroComanda, (total - faltaPagar));
                 produtosLancados.Clear();
                 formasDePagamento.Clear();
                 total = 0;

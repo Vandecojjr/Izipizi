@@ -15,5 +15,6 @@ namespace Comandas.Services
         Task<List<LogPrecoProduto>> GetAllLogsPorPeriodo(DateTime? inicial, DateTime? final);
         Task<byte[]> GerarRelatorio(List<Produto> produtos, int tipo = 0);
         Task<byte[]> GerarCodeDeBarras(Produto produto);
+        Task<bool> ClonarProdutos(string doador, string receptor);
     }
 }

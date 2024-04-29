@@ -100,8 +100,12 @@ namespace Comandas.Services
             if(venda != null)
             {
                 venda.Total -= valor;
-                _context.Entry(venda).State = EntityState.Modified;
-                await _context.SaveChangesAsync();
+                if(Math.Round(venda.Total, 2) <=0) { await DeletarEmAberto(numero); }
+                else
+                {
+                    _context.Entry(venda).State = EntityState.Modified;
+                    await _context.SaveChangesAsync();
+                }
             }
         }
 

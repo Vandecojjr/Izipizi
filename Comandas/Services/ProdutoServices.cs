@@ -87,6 +87,70 @@ namespace Comandas.Services
             _context.Add(produto);
             await _context.SaveChangesAsync();
         }
+
+        public async Task<bool> ClonarProdutos(string doador, string receptor)
+        {
+            try
+            {
+                var Produtos = await _context.Produtos.Where(x => x.ApplicationUserId == doador).ToListAsync();
+                var Categorias = await _context.Categorias.Where(x => x.ApplicationUserId == doador).ToListAsync();
+                List<Produto> novosProdutos = new List<Produto>();
+                List<Categoria> novasCategorias = new List<Categoria>();
+                foreach (var item in Categorias)
+                {
+                    Categoria nova = new();
+                    
+                    nova.CategoriaId = Guid.NewGuid();
+                    nova.ApplicationUserId = receptor;
+                    nova.Descricao = item.Descricao;
+                    nova.Nome = item.Nome;
+                    novasCategorias.Add(nova);
+
+                    var produtosCategoria = Produtos.Where(x => x.Categoria == item).ToList();
+                    foreach (var produto in produtosCategoria)
+                    {
+                            Produto novo = new();
+                            novo.Id = Guid.NewGuid();
+                            novo.ApplicationUserId = receptor;
+                            novo.Categoria = nova;
+                            novo.ID_categoria = nova.CategoriaId;
+                            novo.Codigo = produto.Codigo;
+                            novo.Nome = produto.Nome;
+                            novo.Valor = produto.Valor;
+                            novo.ValorDeCusto = produto.ValorDeCusto;
+                            novo.IsActive = produto.IsActive;
+                            novo.IsControled = produto.IsControled;
+                            novo.IsVolume = produto.IsVolume;
+                            novo.MargemLucro = produto.MargemLucro;
+                            novo.PrecoAutomatico = produto.PrecoAutomatico;
+                            novo.Quantidade = produto.Quantidade;
+                            novo.CodigoDoProdutoVolume = produto.CodigoDoProdutoVolume;
+                            novo.QuantidadeVolume = produto.QuantidadeVolume;
+                            novo.NomeDaCategoria = produto.NomeDaCategoria;
+                            novosProdutos.Add(novo);
+                    }
+                }
+                List<Produto> produtosVolume = novosProdutos.Where(x => x.IsVolume == true).ToList();
+                foreach (var item in produtosVolume)
+                {
+                    var prod = Produtos.FirstOrDefault(x => x.Id == item.CodigoDoProdutoVolume);
+                    prod = novosProdutos.FirstOrDefault(x => x.Nome == prod.Nome);
+                    item.CodigoDoProdutoVolume = prod.Id;
+                }
+
+                _context.AddRange(novasCategorias);
+                _context.AddRange(novosProdutos);
+                await _context.SaveChangesAsync();
+                return true;
+            }
+            catch (Exception ex)
+            { 
+
+                Console.WriteLine(ex.Message);
+                return false;
+            }
+        }
+
         public async Task DeleteProdutoAsync(Guid id)
         {
             var produto = await _context.Produtos.FindAsync(id);
