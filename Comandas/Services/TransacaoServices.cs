@@ -34,28 +34,6 @@ namespace Comandas.Services
                 transacao.Caixa = caixaAtual;
                 transacao.MetodoNome = metodoNome;
 
-                if (transacao.Tipo == true)
-                {
-                    caixaAtual.TotalDeEntrada += transacao.Valor;
-                    
-                    if (transacao.MetodoNome != "A prazo")
-                    {
-                        caixaAtual.Total += transacao.Valor;
-                    }
-
-                    
-                }
-                else
-                {
-                    caixaAtual.TotalDeSaida += transacao.Valor;
-                    if (transacao.MetodoNome != "A prazo")
-                    {
-                        caixaAtual.Total -= transacao.Valor;
-                    }
-                       
-                }
-
-                _context.Entry(caixaAtual).State = EntityState.Modified;
                 _context.Add(transacao);
                 await _context.SaveChangesAsync();
             }

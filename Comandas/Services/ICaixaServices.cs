@@ -6,7 +6,7 @@ namespace Comandas.Services
     {
         Task AbrirCaixa(Transacao abertura);
         Task<Caixa> GetCaixaAberto();
-        Task FecharCaixa(List<FechamentoCaixa> fechamento);
+        Task FecharCaixa(List<FechamentoCaixa> fechamento, decimal total, decimal saida, decimal entrada);
         Task<List<Caixa>> GetAllCaixas();
         Task<List<Caixa>> ObterPorData(DateTime? inicial, DateTime? final);
         Task<List<FechamentoCaixa>> GetAllFechamentos(Caixa caixa);

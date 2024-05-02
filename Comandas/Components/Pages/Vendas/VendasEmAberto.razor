@@ -21,6 +21,9 @@
                 InfoIcon="school"
                 WarningIcon="warning" />
 
+
+<ModalDeConfirmacao  @ref="modalDeConfirmacao" onConfirma="() => DeletarComanda(numeroComanda)" Titulo="Deletar comanda" onCancela="() => modalDeConfirmacao.Ocultar()">Deseja deletar a comanda n° <strong>@numeroComanda</strong>?</ModalDeConfirmacao>
+
 @if (abrirModalVenda)
 {
     <div class="modal-backdrop show"></div>
@@ -172,7 +175,7 @@
 {
     <div class="modal-backdrop show"></div>
     <div class="modal" tabindex="-1" role="dialog"
-         arial-hidden="true" style="display:block;">
+         arial-hidden="true" style="display:block;" @onkeydown="HandleKeyDown">
         <div class="modal-dialog modal-dialog-centered" role="document">
             <div class="modal-content">
                 <div class="modal-header">
@@ -203,7 +206,7 @@
     <div class="modal-backdrop show"></div>
     <div class="modal" tabindex="-1" role="dialog"
          arial-hidden="true" style="display:block;">
-        <div class="modal-dialog modal-dialog-centered modal-xl" role="document">
+        <div class="modal-dialog modal-dialog-centered modal-xl" role="document" >
             <div class="modal-content">
                 <MudDataGrid T="ProdutosEmAberto" MultiSelection="true" Items="@produtosDaComanda" SelectedItemsChanged="@SelecionarProduto" >
                     <ToolBarContent>
@@ -228,11 +231,46 @@
     </div>
 }
 
+@if (verHistorico)
+{
+    <div class="modal-backdrop show"></div>
+    <div class="modal" tabindex="-1" role="dialog"
+         arial-hidden="true" style="display:block;" @onkeydown="HandleKeyDown">
+        <div class="modal-dialog modal-dialog-centered modal-xl" role="document">
+            <div class="modal-content">
+                <MudDataGrid T="HistoricoEmAberto" MultiSelection="true" Items="@Historico">
+                    <ToolBarContent>
+                        <MudText Typo="Typo.h6">Produtos vendidos</MudText>
+                    </ToolBarContent>
+                    <Columns>
+                        <PropertyColumn Property="x => x.Horario" Sortable="false" Title="Data" Filterable="false" />
+                        <PropertyColumn Property="x => x.Valor" Sortable="false" Title="Valor" Filterable="false" />
+                        <TemplateColumn Filterable="false" Sortable="false" Title="saida/entrada">
+                            <CellTemplate>
+                                @if (context.Item.IsEntrada)
+                                {
+                                    <MudIcon Icon="@Icons.Material.Filled.KeyboardControlKey" Color="Color.Success" Title="entrada" />
+                                }
+                                else
+                                {
+                                    <MudIcon Icon="@Icons.Material.Filled.KeyboardArrowDown" Color="Color.Error" Title="saida" />
+                                }
+                            </CellTemplate>
+                        </TemplateColumn>
+
+                    </Columns>
+                </MudDataGrid>
+                <MudButton OnClick="() => verHistorico=false" Class="mx-3 my-3" Variant="Variant.Filled" Color="Color.Info">OK</MudButton>
+            </div>
+        </div>
+    </div>
+}
+
 @if (lancarVenda)
 {
     <div class="modal-backdrop show"></div>
     <div class="modal" tabindex="-1" role="dialog"
-         arial-hidden="true" style="display:block;">
+         arial-hidden="true" style="display:block;" @onkeydown="HandleKeyDown">
         <div class="modal-dialog modal-xl modal-dialog-centered" role="document">
             <div class="modal-content">
                 <div class="container">
@@ -253,7 +291,7 @@
 @*  Cards das comandas abertar  *@
 
 <MudPaper Elevation="0" Class="my-4 pe-7">
-    <MudGrid Class="mx-1">
+    <MudGrid Class="mx-1" @onkeydown="HandleKeyDown">
         <MudItem sm="12" xs="12" md="4" xl="2">
             <MudCard Elevation="0" Style="background:#1C7293;" Class="h-100">
                 <MudCardHeader>
@@ -276,7 +314,7 @@
                                 <MudSpacer />
                                     <MudIconButton OnClick="() => ModalLancarVendaEmAberto(item.Numero)" Icon="@Icons.Material.Filled.Add" Style="color:white;"></MudIconButton>
                                     <MudIconButton OnClick="() => AbrirModalDeVenda(item.Total, item.Numero)" Icon="@Icons.Material.Filled.CurrencyBitcoin" Style="color:white;"></MudIconButton>
-                                    <MudIconButton OnClick="() => DeletarComanda(item.Numero)" Icon="@Icons.Material.Filled.DeleteOutline" Style="color:white;"></MudIconButton>
+                                    <MudIconButton OnClick="() => AbrirModalConfirmacaoDelete(item.Numero)" Icon="@Icons.Material.Filled.DeleteOutline" Style="color:white;"></MudIconButton>
                                     <MudIconButton OnClick="() => AbrirModalFecharVerProdutos(item.Numero, item.Total)" Icon="@Icons.Material.Filled.RemoveRedEye" Style="color:white;"></MudIconButton>
                             </div>
                             <hr / style="color:white;">
@@ -287,6 +325,8 @@
                     </MudCardContent>
                     <hr / style="color:white;">
                     <MudCardActions Class="d-flex justify-content-center">
+                            <MudIconButton OnClick="() => BuscarHistorico(item.Id)" Icon="@Icons.Material.Filled.Checklist" Style="color:white;"></MudIconButton>
+                            <MudSpacer></MudSpacer>
                             <MudText Typo="Typo.h6" Style="color:white;">@item.Total.ToString("C", System.Globalization.CultureInfo.CreateSpecificCulture("pt-BR"))</MudText>
                     </MudCardActions>
                 </MudCard>
@@ -306,14 +346,19 @@
 </script>
 
 @code {
+    ModalDeConfirmacao modalDeConfirmacao;
+
     public List<EmAberto> EmAbertos = new List<EmAberto>();
     public List<ProdutosEmAberto> produtosDaComanda = new List<ProdutosEmAberto>();
     public List<ProdutosEmAberto> produtosDaComandaSelecionados = new List<ProdutosEmAberto>();
     private List<ProdutoVendido> produtosLancados = new List<ProdutoVendido>();
+    public List<HistoricoEmAberto> Historico = new List<HistoricoEmAberto>();
     private Caixa caixaAtual = null;
     public EmAberto NovoEmAberto = new();
     public bool abrirModalNovoEmAberto { get; set; }
     public bool verProdutos { get; set; }
+    public bool verHistorico { get; set; }
+
 
 
     public bool lancarVenda {get;set; }
@@ -406,6 +451,7 @@
     {
         await EmabertoServices.DeletarEmAberto(numero);
         EmAbertos = await EmabertoServices.GetAllEmAberto();
+        modalDeConfirmacao.Ocultar();
 
     }
 
@@ -679,10 +725,10 @@
         else if (e.Key == "F4")
         {
 
-                if (abrirModalVenda  && config.VendaRapida)
-                {
-                    await JSRuntime.InvokeVoidAsync("focusElementById", "Pix");
-                }
+            if (abrirModalVenda  && config.VendaRapida)
+            {
+                await JSRuntime.InvokeVoidAsync("focusElementById", "Pix");
+            }
 
         }
         else if (e.Key == "F2")
@@ -696,7 +742,10 @@
         else if (e.Key == "Escape")
         {
             FecharModalDeVenda();
-            
+            lancarVenda = false;
+            modalDeConfirmacao.Ocultar();
+            verHistorico = false;
+
         }
         else if (e.Key == "F8")
         {
@@ -725,4 +774,17 @@
             formasDePagamento.Add(forma);
         }
     }
+
+    public void AbrirModalConfirmacaoDelete(int num)
+    {
+        numeroComanda = num;
+        modalDeConfirmacao.Exibir();
+    }
+
+    public async Task BuscarHistorico(Guid Id)
+    {
+        Historico = await EmabertoServices.GetHistorico(Id);
+        verHistorico = true;
+    }
+
 }

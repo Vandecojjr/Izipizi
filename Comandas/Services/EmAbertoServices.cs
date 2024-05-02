@@ -1,6 +1,7 @@
 ﻿
 using Comandas.Data;
 using Comandas.Data.Models;
+using FastReport.Data;
 using Microsoft.EntityFrameworkCore;
 
 namespace Comandas.Services
@@ -31,6 +32,26 @@ namespace Comandas.Services
 
             _context.Add(emAberto);
             await _context.SaveChangesAsync();
+        }
+
+        public async Task AddHistorico(decimal valor, string userId, bool entradaOrNot, Guid IdEmAberto)
+        {
+            try
+            {
+                HistoricoEmAberto historicoNovo = new();
+                historicoNovo.IsEntrada = entradaOrNot;
+                historicoNovo.IdEmAberto = IdEmAberto;
+                historicoNovo.Horario = DateTime.Now;
+                historicoNovo.UserID = userId;
+                historicoNovo.Valor = valor;
+                _context.Add(historicoNovo);
+                await _context.SaveChangesAsync();
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
         }
 
         public async Task AddProdutoEmAberto(List<ProdutoVendido> produtos, int comanda, string vendedor)
@@ -66,6 +87,7 @@ namespace Comandas.Services
             vendaEmAberto.Total += (decimal)total;
             _context.Entry(vendaEmAberto).State = EntityState.Modified;
             await _context.SaveChangesAsync();
+            await AddHistorico((decimal)total, userId, true, vendaEmAberto.Id);
         }
 
         public async Task DeletarEmAberto(int numero)
@@ -107,6 +129,7 @@ namespace Comandas.Services
                     await _context.SaveChangesAsync();
                 }
             }
+            await AddHistorico((decimal)valor, userId, false, venda.Id);
         }
 
         public async Task<List<EmAberto>> GetAllEmAberto()
@@ -129,9 +152,25 @@ namespace Comandas.Services
             return produtosEmAbertos;
         }
 
+        public  async Task<List<HistoricoEmAberto>> GetHistorico(Guid idComanda)
+        {
+            try
+            {
+                var historicos = await _context.historicoEmAbertos.Where(x => x.IdEmAberto == idComanda).ToListAsync();
+                return historicos;
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
+        }
+
         public async Task RemoveProdutoEmAberto(List<ProdutosEmAberto> produtos, int comanda)
         {
-
+            string userId = await _user.GetCurrentUserIdAsync();
+            var userCurrent = await _context.Users.FirstOrDefaultAsync(x => x.Id == userId);
+            if (userCurrent.nivelAdmin == 2) userId = userCurrent.IdDoProprietario;
             decimal? total = 0;
             // Calcular o total para itens com total nulo e verificar a existência do produto
             foreach (var item in produtos)
@@ -154,7 +193,7 @@ namespace Comandas.Services
             }
             // Salvar as alterações no banco de dados
             await _context.SaveChangesAsync();
-
+            var vendaEmAberto = await _context.VendasEmAberto.FirstOrDefaultAsync(x => x.Numero == comanda && x.IdDoUsuario == userId);
             await EditarComanda(comanda, (decimal)total);
         }
     }

@@ -50,7 +50,7 @@
                                         {
                                             <td>@(string.Format("{0:C}", item.ValorApurado))</td>
                                         }
-                                        <th>@(string.Format("{0:C}", caixaAtual.Total))</th>
+                                        <th>@(string.Format("{0:C}", total))</th>
                                     </tr>
                                 </tbody>
                             </table>
@@ -92,7 +92,7 @@
                                         {
                                             <td>@(string.Format("{0:C}", (item.ValorInformado - item.ValorApurado)))</td>
                                         }
-                                        <th>@(string.Format("{0:C}", (totalInformado - caixaAtual.Total)))</th>
+                                        <th>@(string.Format("{0:C}", (totalInformado - total)))</th>
                                     </tr>
                                 </tbody>
                             </table>
@@ -280,17 +280,17 @@
                             <MudPaper Elevation="0" Style="background:#ECEFF1;" Class="d-flex px-1 pt-1">
                                 <h3>Total</h3>
                                 <MudSpacer />
-                                <h4>@(string.Format("{0:C}", caixaAtual.Total))</h4>
+                                <h4>@(string.Format("{0:C}", total))</h4>
                             </MudPaper>
                             <MudPaper Elevation="0" Class="d-flex px-1 pt-1 mb-1">
                                 <h5 class="text-danger">Saida</h5>
                                 <MudSpacer />
-                                <h5 class="text-danger">@(string.Format("{0:C}", caixaAtual.TotalDeSaida))</h5>
+                                <h5 class="text-danger">@(string.Format("{0:C}", totalSaida))</h5>
                             </MudPaper>
                             <MudPaper Elevation="0" Class="d-flex px-1 pt-1 mb-1">
                                 <h5 class="text-success">Entrada</h5>
                                 <MudSpacer />
-                                <h5 class="text-success">@(string.Format("{0:C}", caixaAtual.TotalDeEntrada))</h5>
+                                <h5 class="text-success">@(string.Format("{0:C}", totalEntrada))</h5>
                             </MudPaper>
                             <MudPaper Elevation="0" Class="d-flex px-1 pt-1 mb-1">
                                 <h5 Style="color:#065A82;">Abertura</h5>
@@ -378,6 +378,9 @@
     public bool modalAPrazo2 = false;
     public decimal totalInformado = 0;
     public decimal totalAreceber = 0;
+    public decimal total { get; set; }
+    public decimal totalSaida { get; set; }
+    public decimal totalEntrada { get; set; }
     Guid clienteId { get; set; }
 
     public List<Transacao> transacoes = new List<Transacao>();
@@ -420,14 +423,14 @@
         AbrirOuFecharModal();
         if (NovaTransacao.MetodoId == Guid.Empty)
         {
-            toastService.ShowError("Preenhcha Todos os campos");
+    toastService.ShowError("Preenhcha Todos os campos");
         }
         else
         {
-            await CaixaServices.AbrirCaixa((Transacao)NovaTransacao);
-            NovaTransacao = new();
-            await AtualizaCaixa();
-            toastService.ShowSuccess("Transação realizado com sucesso.");
+    await CaixaServices.AbrirCaixa((Transacao)NovaTransacao);
+    NovaTransacao = new();
+    await AtualizaCaixa();
+    toastService.ShowSuccess("Transação realizado com sucesso.");
         }
 
     }
@@ -448,19 +451,19 @@
         Cliente cliente = await ClientesServices.GetCliente(clienteId);
         if (cliente == null)
         {
-            AbrirOuFecharModalAprazo();
-            toastService.ShowError("O cliente não existe");
+    AbrirOuFecharModalAprazo();
+    toastService.ShowError("O cliente não existe");
         }
         else
         {
-            AbrirOuFecharModalAprazo();
-            vendas = vendas.Where(x => x.IdCliente == clienteId && x.IsPrazo == true && x.IsPago == false).ToList();
-            NovaTransacao.Valor = 0;
-            NovaTransacao.Nome = $"{cliente.Nome} pagou.";
-            totalAreceber = (decimal)cliente.Limite - (decimal)cliente.LimiteRestante;
-            NovaTransacao.Valor += totalAreceber;
-            modalAPrazo2 = !modalAPrazo2;
-            tipoDaTransacao = true;
+    AbrirOuFecharModalAprazo();
+    vendas = vendas.Where(x => x.IdCliente == clienteId && x.IsPrazo == true && x.IsPago == false).ToList();
+    NovaTransacao.Valor = 0;
+    NovaTransacao.Nome = $"{cliente.Nome} pagou.";
+    totalAreceber = (decimal)cliente.Limite - (decimal)cliente.LimiteRestante;
+    NovaTransacao.Valor += totalAreceber;
+    modalAPrazo2 = !modalAPrazo2;
+    tipoDaTransacao = true;
         }
 
 
@@ -482,37 +485,39 @@
     {
         if (caixaAtual == null)
         {
-            AbrirCaixaAtual();
+    AbrirCaixaAtual();
         }
         else
         {
-            if (NovaTransacao.MetodoId == Guid.Empty || NovaTransacao.Nome == null)
-            {
-                toastService.ShowError("Preenhcha Todos os campos");
-            }
-            else
-            {  
-                if (clienteId != Guid.Empty)
-                {
-                    await ClientesServices.AtualizaPrazoCliente(NovaTransacao.Valor, clienteId);
-                    AbrirOuFecharModal();
-                }
-                NovaTransacao.Tipo = tipoDaTransacao;
-                await TransacaoServices.AddTransacaoAsync(NovaTransacao);
-                NovaTransacao = new();
-                await AtualizaCaixa();
-                AbrirOuFecharModal();
-                modalAPrazo = false;
-                modalAPrazo = false;
-                modalAPrazo2 = false;
-                toastService.ShowSuccess("Transação realizado com sucesso.");
+    if (NovaTransacao.MetodoId == Guid.Empty || NovaTransacao.Nome == null)
+    {
+        toastService.ShowError("Preenhcha Todos os campos");
+    }
+    else
+    {  
+        if (clienteId != Guid.Empty)
+        {
+            await ClientesServices.AtualizaPrazoCliente(NovaTransacao.Valor, clienteId);
+            AbrirOuFecharModal();
+        }
+        NovaTransacao.Tipo = tipoDaTransacao;
+        await TransacaoServices.AddTransacaoAsync(NovaTransacao);
+        NovaTransacao = new();
+        await AtualizaCaixa();
+        AbrirOuFecharModal();
+        modalAPrazo = false;
+        modalAPrazo = false;
+        modalAPrazo2 = false;
+        toastService.ShowSuccess("Transação realizado com sucesso.");
 
-            }
+    }
         }
     }
 
     public async Task CalcularMetodosDefechamento()
     {
+        totalEntrada = 0;
+        totalSaida = 0;
         fechamentos.Clear();
         foreach (var item in metodosDePagamento2)
         {
@@ -538,12 +543,16 @@
                 }
             }
             fechamentos.Add(fechamentoCaixa);
+            totalEntrada += calculoTransacoes.Where(x => x.Tipo == true).Sum(x => x.Valor);
+            totalSaida += calculoTransacoes.Where(x => x.Tipo == false).Sum(x => x.Valor);
         }
+        total = fechamentos.Where(x => x.NomeMetodo != "A prazo")
+                       .Sum(x => x.ValorApurado);
     }
 
     public async Task FecharCaixa()
     {
-        await CaixaServices.FecharCaixa(fechamentos);
+        await CaixaServices.FecharCaixa(fechamentos,total,totalSaida,totalEntrada);
         foreach (var item in fechamentos)
         {
             totalInformado += item.ValorInformado;

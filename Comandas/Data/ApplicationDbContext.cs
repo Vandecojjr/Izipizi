@@ -27,6 +27,7 @@ namespace Comandas.Data
         public DbSet<EmAberto> VendasEmAberto { get; set; }
         public DbSet<ProdutosEmAberto> produtosEmAberto { get; set; }
         public DbSet<Configuracao> configuracoes { get; set; }
+        public DbSet<HistoricoEmAberto> historicoEmAbertos { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);

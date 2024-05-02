@@ -11,5 +11,7 @@ namespace Comandas.Services
         Task<List<ProdutosEmAberto>> GetAllProdutosEmAberto(int numero);
         Task DeletarEmAberto(int numero);
         Task EditarComanda(int numero, decimal valor);
+        Task AddHistorico(decimal valor, string userId, bool entradaOrNot, Guid IdEmAberto);
+        Task<List<HistoricoEmAberto>> GetHistorico(Guid idComanda);
     }
 }

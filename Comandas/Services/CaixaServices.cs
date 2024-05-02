@@ -50,7 +50,7 @@ namespace Comandas.Services
             }
         }
 
-        public async Task FecharCaixa(List<FechamentoCaixa> fechamento)
+        public async Task FecharCaixa(List<FechamentoCaixa> fechamento, decimal total, decimal saida, decimal entrada)
         {
             var caixaAtual = await GetCaixaAberto();
             foreach (var item in fechamento)
@@ -60,6 +60,9 @@ namespace Comandas.Services
             
             caixaAtual.Estado = false;
             caixaAtual.DataDeFechamento = DateTime.Now;
+            caixaAtual.Total = total;
+            caixaAtual.TotalDeSaida = saida;
+            caixaAtual.TotalDeEntrada = entrada;
             _context.Entry(caixaAtual).State = EntityState.Modified;
             await _context.SaveChangesAsync();
         }
