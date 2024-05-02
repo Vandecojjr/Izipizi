@@ -30,7 +30,7 @@ namespace Comandas.Services
             Transacao transacao = new();
             transacao.Nome = $"Venda N° {venda.Numero}";
             transacao.MetodoId = metodo.Id;
-            transacao.Valor = formaDePagamento.Valor;
+            transacao.Valor = formaDePagamento.Valor == null ? 0 : (decimal)formaDePagamento.Valor;
             transacao.Tipo = true;
 
             await _transacaoServices.AddTransacaoAsync(transacao);

@@ -11,7 +11,7 @@ namespace Comandas.Data.Models
         public string NomeDoMetodo { get; set; }
 
         [Column(TypeName = "decimal(10, 2)")]
-        public decimal Valor { get; set; }
+        public decimal? Valor { get; set; }
         public Guid VendaId { get; set; }
         public virtual Venda? Venda { get; set; }
     }

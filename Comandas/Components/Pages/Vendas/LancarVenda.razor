@@ -258,7 +258,7 @@ else if (bloqueioModal)
                                     }
                                 </InputSelect>
                                 <label for="valor"><h6>Valor</h6></label>
-                                <InputNumber @onblur="AtualizaFaltaPagar" @onkeydown="@(e => CompletaValorDoInput(item, e))" id="valor" class="form-control mb-2" @bind-Value="item.Valor"></InputNumber>
+                                            <InputNumber @onblur="AtualizaFaltaPagar" @onkeydown="@(e => CompletaValorDoInput(item, e))" id="valor" class="form-control mb-2" @bind-Value="item.Valor"></InputNumber>
                                 <MudButton OnClick="() => RemoveFormaDePagamento(item)" Class="mx-3" Variant="Variant.Text" StartIcon="@Icons.Material.Filled.Delete" Color="Color.Error"></MudButton>
                             }
                             else
@@ -266,7 +266,7 @@ else if (bloqueioModal)
                                             
                                <div class="input-group input-group-sm mb-3">
                                     <span class="input-group-text" id="inputGroup-sizing-sm">@item.NomeDoMetodo</span>
-                                    <InputNumber @onblur="AtualizaFaltaPagar" @onkeydown="@(e => CompletaValorDoInput(item, e))" id="@item.NomeDoMetodo" class="form-control" @bind-Value="item.Valor"></InputNumber>
+                                    <InputNumber @onblur="AtualizaFaltaPagar" @onkeydown="@(e => CompletaValorDoInput(item, e))" id="@item.NomeDoMetodo" class="form-control" @bind-Value="item.Valor" ></InputNumber>
                                </div>
                             }
                         }
@@ -766,10 +766,11 @@ window.scrollToSelectedOption = function (selectedIndex) {
     }
 
     public void AbreInfoAtalhos() => infoAtalhos = !infoAtalhos;
-    public void AbreVendaRapida()
+    public async void AbreVendaRapida()
     {
         vendaRapida = true;
         AbrirModalDeVenda();
+
     }
     public void openCloseModalMensagem() => modalMensagem = !modalMensagem;
 
@@ -841,6 +842,7 @@ window.scrollToSelectedOption = function (selectedIndex) {
                 if (abrirModalVenda && !vendaRapida && config.VendaRapida)
                 {
                     await JSRuntime.InvokeVoidAsync("focusElementById", "Pix");
+                    formasDePagamento.First(x => x.NomeDoMetodo == "Pix").Valor = faltaPagar;
                 }
                 else if (vendaRapida && produtosLancados.Count > 0)
                 {
@@ -868,6 +870,7 @@ window.scrollToSelectedOption = function (selectedIndex) {
             else if (abrirModalVenda && !vendaRapida && config.VendaRapida)
             {
                 await JSRuntime.InvokeVoidAsync("focusElementById", "Dinheiro");
+                formasDePagamento.First(x => x.NomeDoMetodo == "Dinheiro").Valor = faltaPagar;
             }
 
         }
@@ -895,6 +898,7 @@ window.scrollToSelectedOption = function (selectedIndex) {
             else if (abrirModalVenda && !vendaRapida && config.VendaRapida)
             {
                 await JSRuntime.InvokeVoidAsync("focusElementById", "Credito");
+                formasDePagamento.First(x => x.NomeDoMetodo == "Credito").Valor = faltaPagar;
             }
         }
         else if (e.Key == "F9")
@@ -907,6 +911,7 @@ window.scrollToSelectedOption = function (selectedIndex) {
             else if (abrirModalVenda && !vendaRapida && config.VendaRapida)
             {
                 await JSRuntime.InvokeVoidAsync("focusElementById", "Debito");
+                formasDePagamento.First(x => x.NomeDoMetodo == "Debito").Valor = faltaPagar;
             }
         }
         else if (e.Key == "ArrowDown")
@@ -929,11 +934,14 @@ window.scrollToSelectedOption = function (selectedIndex) {
         abrirModalVenda = false;
         vendaRapida = false;
     }
-    public void AbrirModalDeVenda() 
+    public async Task AbrirModalDeVenda() 
     {
         faltaPagar = total;
         abrirModalVenda = true;
-        if (config.VendaRapida && !vendaRapida) { MetodosDePagamentoVendasRapidas(); }
+        if (config.VendaRapida && !vendaRapida) 
+        { 
+            MetodosDePagamentoVendasRapidas(); 
+        }
     }
     public void ReceberComanda() => receberComanda = !receberComanda;
 
@@ -950,7 +958,7 @@ window.scrollToSelectedOption = function (selectedIndex) {
 
             foreach (var item in formasDePagamento)
             {
-                var valor = Math.Round(item.Valor, 2);
+                var valor = Math.Round(item.Valor == null ? 0 : (decimal)item.Valor, 2);
                 if (item.MetodoDePagamentoId == Guid.Empty) metodoDePagamentoNulo = true;
                 else
                 {
@@ -958,7 +966,7 @@ window.scrollToSelectedOption = function (selectedIndex) {
                     if (metodoConfere.Nome == "A prazo" && valor > 0)
                     {
                         aprazo = true;
-                        totalPrazo += item.Valor;
+                        totalPrazo += item.Valor == null ? 0 : (decimal)item.Valor;
                     }
                 }
             }
@@ -1199,7 +1207,7 @@ window.scrollToSelectedOption = function (selectedIndex) {
         decimal novoTotal = 0;
         foreach (var item in formasDePagamento)
         {
-            novoTotal += item.Valor;
+            novoTotal += item.Valor == null ? 0 : (decimal)item.Valor;
         }
         faltaPagar -= novoTotal;
     }
