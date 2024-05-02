@@ -426,7 +426,7 @@ else if (bloqueioModal)
         </MudItem>
             <MudItem sm="1" xs="6" @onkeydown="HandleKeyDown">
             <h5>Qtd</h5>
-            <InputNumber id="inputQtd" class="form-control" @oninput="AlteraQuantidade" @bind-Value="quantidade"></InputNumber>
+                    <InputNumber id="inputQtd" class="form-control" @oninput="AlteraQuantidade" @onkeydown="VoltaProSelect" @bind-Value="quantidade"></InputNumber>
         </MudItem>
         <MudItem sm="2" xs="6"   @onkeydown="HandleKeyDown">
             <h5>Valor</h5>
@@ -1223,7 +1223,14 @@ window.scrollToSelectedOption = function (selectedIndex) {
             quantidade = valorinteiro;
         }
     }
-
+    public async void VoltaProSelect(KeyboardEventArgs k)
+    {
+        if (k.Key == "Escape")
+        {
+            clicarNoAutocomplite();
+            await JSRuntime.InvokeVoidAsync("focusElementById", "autoComplit-input");
+        }
+    }
     private void AlterarDescontoInput(ChangeEventArgs args)
     {
         string valorString = args.Value.ToString();
