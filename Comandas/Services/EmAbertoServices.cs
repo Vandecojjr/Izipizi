@@ -3,6 +3,7 @@ using Comandas.Data;
 using Comandas.Data.Models;
 using FastReport.Data;
 using Microsoft.EntityFrameworkCore;
+using System.Transactions;
 
 namespace Comandas.Services
 {
@@ -56,38 +57,53 @@ namespace Comandas.Services
 
         public async Task AddProdutoEmAberto(List<ProdutoVendido> produtos, int comanda, string vendedor)
         {
-            string userId = await _user.GetCurrentUserIdAsync();
-            var userCurrent = await _context.Users.FirstOrDefaultAsync(x => x.Id == userId);
-            if (userCurrent.nivelAdmin == 2) userId = userCurrent.IdDoProprietario;
-
-            
-            decimal? total = 0;
-            var vendaEmAberto = await _context.VendasEmAberto.FirstOrDefaultAsync(x => x.Numero == comanda && x.IdDoUsuario == userId);
-            foreach (var item in produtos)
+            try
             {
-                ProdutosEmAberto produto = new();
-                var ajustarEstoque = await _context.Produtos.FirstOrDefaultAsync(x => x.Id == item.IdDoProduto);
-                total += item.valor * item.Quantidade;
-                ajustarEstoque.Quantidade -= item.Quantidade;
-               
+                using (var transactionScope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
+                {
+                    string userId = await _user.GetCurrentUserIdAsync();
+                    var userCurrent = await _context.Users.FirstOrDefaultAsync(x => x.Id == userId);
+                    if (userCurrent.nivelAdmin == 2) userId = userCurrent.IdDoProprietario;
 
-                if (vendedor == null) produto.Vendedor = userCurrent.Email;
-                else produto.Vendedor = vendedor;
-                produto.IdDoProduto = item.IdDoProduto;
-                produto.NomeProduto = item.Nome;
-                produto.NumeroComanda = comanda;
-                produto.Quantidade = (int)item.Quantidade;
-                produto.IdDoUsuario = userId;
-                produto.DataDaVenda = DateTime.Now;
-                produto.total = item.valor * item.Quantidade;
 
-                _context.Add(produto);
-                await _produtoServices.UpdateProdutoAsync(ajustarEstoque, true);
+                    decimal? total = 0;
+                    var vendaEmAberto = await _context.VendasEmAberto.FirstOrDefaultAsync(x => x.Numero == comanda && x.IdDoUsuario == userId);
+                    if(vendaEmAberto != null) 
+                    { 
+                        foreach (var item in produtos)
+                        {
+                            ProdutosEmAberto produto = new();
+                            var ajustarEstoque = await _context.Produtos.FirstOrDefaultAsync(x => x.Id == item.IdDoProduto);
+                            total += item.valor * item.Quantidade;
+                            ajustarEstoque.Quantidade -= item.Quantidade;
+
+
+                            if (vendedor == null) produto.Vendedor = userCurrent.Email;
+                            else produto.Vendedor = vendedor;
+                            produto.IdDoProduto = item.IdDoProduto;
+                            produto.NomeProduto = item.Nome;
+                            produto.NumeroComanda = comanda;
+                            produto.Quantidade = item.Quantidade == null ? 0 : (int)item.Quantidade;
+                            produto.IdDoUsuario = userId;
+                            produto.DataDaVenda = DateTime.Now;
+                            produto.total = item.valor * item.Quantidade;
+
+                            _context.Add(produto);
+                            await _produtoServices.UpdateProdutoAsync(ajustarEstoque, true);
+                        }
+                        vendaEmAberto.Total += total == null ? 0 : (decimal)total;
+                        _context.Entry(vendaEmAberto).State = EntityState.Modified;
+                        await _context.SaveChangesAsync();
+                        await AddHistorico(total == null ? 0 : (decimal)total, userId, true, vendaEmAberto.Id);
+                    }
+                        transactionScope.Complete(); // Marca a transação como concluída
+                }
             }
-            vendaEmAberto.Total += (decimal)total;
-            _context.Entry(vendaEmAberto).State = EntityState.Modified;
-            await _context.SaveChangesAsync();
-            await AddHistorico((decimal)total, userId, true, vendaEmAberto.Id);
+            catch (Exception)
+            {
+
+                throw;
+            }
         }
 
         public async Task DeletarEmAberto(int numero)
