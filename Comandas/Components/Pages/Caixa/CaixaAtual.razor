@@ -4,6 +4,7 @@
 @using Blazored.Toast.Configuration
 @using Blazored.Typeahead
 @using System.Threading.Tasks;
+@using System.Security.Claims
 @inject IToastService toastService
 @inject ICaixaServices CaixaServices
 @inject ITransacaoServices TransacaoServices
@@ -13,6 +14,7 @@
 @inject IVendaServices VendasServices
 @inject IJSRuntime JSRuntime
 @inject NavigationManager NavigationManager
+@inject AuthenticationStateProvider AuthenticationStateProvider
 
 
     <BlazoredToasts Position="ToastPosition.TopRight"
@@ -275,6 +277,8 @@
         {
             <MudContainer Class="mt-8 px-2" MaxWidth="MaxWidth.False">
                 <MudGrid Class="mb-3">
+                @if (userRoles.Contains("EasyAdmin") || userRoles.Contains("Admin") || userRoles.Contains("caixa"))
+                {
                     <MudItem xs="12" sm="6" md="4">
                         <MudPaper Elevation="2" Class="pa-2" Style="height: 200px;">
                             <MudPaper Elevation="0" Style="background:#ECEFF1;" Class="d-flex px-1 pt-1">
@@ -299,7 +303,10 @@
                             </MudPaper>
                         </MudPaper>
                     </MudItem>
+                    }
                     <MudItem xs="12" sm="12" md="12">
+                    @if (userRoles.Contains("EasyAdmin") || userRoles.Contains("Admin") || userRoles.Contains("caixa"))
+                    {
                         <MudPaper Elevation="2" Class="pa-4 d-lg-flex">
                             @foreach (var item in fechamentos)
                             {
@@ -307,6 +314,7 @@
                                 <MudChip Style="background:#065A82; color:white;">@(string.Format("{0:C}", item.ValorApurado))</MudChip>
                             }
                         </MudPaper>
+                    }
                     </MudItem>
                     <MudItem xs="12" sm="12" md="12">
                         <MudPaper Elevation="2" Class="pa-4 d-lg-flex ">
@@ -320,38 +328,44 @@
                                  <MudButton OnClick="() => NovaTransacaoModal(false)" Class="ma-1" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.ArrowCircleDown" Color="Color.Error">Nova Saida</MudButton>
                              </MudItem>
                         <MudItem xs="12" lg="2">
-                            <MudButton OnClick="AbrirOuFecharModalFechamento" Class="ma-1" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.LabelOff" Color="Color.Dark">Fechar Caixa</MudButton>
-                            </MudItem>
+                            @if (userRoles.Contains("EasyAdmin") || userRoles.Contains("Admin") || userRoles.Contains("caixa"))
+                            {
+                                <MudButton OnClick="AbrirOuFecharModalFechamento" Class="ma-1" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.LabelOff" Color="Color.Dark">Fechar Caixa</MudButton>
+                            }
+                        </MudItem>
                             <MudSpacer />
                             <MudChip Style="background:#065A82; color:white;">Aberto em @caixaAtual.DataDeAbertura</MudChip>
                             </MudPaper>
                         </MudItem>
                         <MudItem xs="12" sm="12" md="12">
-                            <MudDataGrid T="Transacao" Items="@transacoes">
-                                <ToolBarContent>
-                                    <MudText Typo="Typo.h6">Transações</MudText>
-                                </ToolBarContent>
-                                <Columns>
-                                    <PropertyColumn Property="x => x.Nome" Sortable="false" Title="Nome" Filterable="false" />
-                                    <PropertyColumn Property="x => x.Data" Title="Data" Sortable="false" Filterable="false" />
-                                    <PropertyColumn Property="x => x.UserNome" Title="Usuário" Sortable="false" Filterable="false" />
-                                    <TemplateColumn Filterable="false" Sortable="false" Title="Entrada/Saida">
-                                        <CellTemplate>
-                                            @if (context.Item.Tipo)
-                                        {
-                                            <MudIcon Icon="@Icons.Material.Filled.CompareArrows" Color="Color.Success" Title="Entrada"></MudIcon>
-                                        }
-                                        else
-                                        {
-                                            <MudIcon Icon="@Icons.Material.Filled.CompareArrows" Color="Color.Error" Title="Saida"></MudIcon>
-                                        }
-                                    </CellTemplate>
-                                </TemplateColumn>
-                                <PropertyColumn Property="x => x.MetodoNome" Title="Método" Sortable="false" Filterable="false" />
-                                <PropertyColumn Property="x => x.Valor" Title="Preço de venda" Sortable="false" Filterable="false" Format="C" />
-                            </Columns>
-                        </MudDataGrid>
-                    </MudItem>
+                            @if (userRoles.Contains("EasyAdmin") || userRoles.Contains("Admin") || userRoles.Contains("caixa"))
+                            {
+                                <MudDataGrid T="Transacao" Items="@transacoes">
+                                    <ToolBarContent>
+                                        <MudText Typo="Typo.h6">Transações</MudText>
+                                    </ToolBarContent>
+                                    <Columns>
+                                        <PropertyColumn Property="x => x.Nome" Sortable="false" Title="Nome" Filterable="false" />
+                                        <PropertyColumn Property="x => x.Data" Title="Data" Sortable="false" Filterable="false" />
+                                        <PropertyColumn Property="x => x.UserNome" Title="Usuário" Sortable="false" Filterable="false" />
+                                        <TemplateColumn Filterable="false" Sortable="false" Title="Entrada/Saida">
+                                            <CellTemplate>
+                                                @if (context.Item.Tipo)
+                                                {
+                                                    <MudIcon Icon="@Icons.Material.Filled.CompareArrows" Color="Color.Success" Title="Entrada"></MudIcon>
+                                                }
+                                                else
+                                                {
+                                                    <MudIcon Icon="@Icons.Material.Filled.CompareArrows" Color="Color.Error" Title="Saida"></MudIcon>
+                                                }
+                                            </CellTemplate>
+                                        </TemplateColumn>
+                                        <PropertyColumn Property="x => x.MetodoNome" Title="Método" Sortable="false" Filterable="false" />
+                                        <PropertyColumn Property="x => x.Valor" Title="Preço de venda" Sortable="false" Filterable="false" Format="C" />
+                                    </Columns>
+                                </MudDataGrid>
+                            }
+                </MudItem>
                 </MudGrid>
             </MudContainer>
         }
@@ -390,13 +404,26 @@
     public List<Venda> vendas = new List<Venda>();
     public List<Cliente> clientes = new List<Cliente>();
 
+    private List<string> userRoles = new List<string>();
 
     protected override async Task OnInitializedAsync()
     {
         carregando = true;
         await AtualizaCaixa();
         bool usuarioAtivo = await UsuarioServices.GetUsuarioAtivo();
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
         if (!usuarioAtivo) NavigationManager.NavigateTo("/pagamento");
+
+        if (user != null && user.Identity != null && user.Identity.IsAuthenticated)
+        {
+            if (user.Identity is ClaimsIdentity claimsIdentity)
+            {
+                var roleClaims = claimsIdentity.FindAll(ClaimTypes.Role);
+                userRoles = roleClaims.Select(c => c.Value).ToList();
+            }
+        }
+
         clientes = await ClientesServices.ObterTodos();
         vendas = await VendasServices.GetAllVendasAsync();
         clientes = clientes.Where(x => x.LimiteRestante < x.Limite).ToList();

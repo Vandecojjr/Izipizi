@@ -26,7 +26,8 @@
 }
 else
 {
-
+    @if (userRoles.Contains("EasyAdmin") || userRoles.Contains("Admin") || userRoles.Contains("caixa"))
+    {
 @* Modal de Apuração do caixa *@
 @if (modalApuracao)
 {
@@ -228,6 +229,7 @@ else
         </Columns>
     </MudDataGrid>
 </MudPaper>
+}
 }
 @code {
     public bool carregando = true;

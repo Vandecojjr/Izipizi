@@ -90,6 +90,10 @@ builder.Services.AddAuthorization(options =>
       policy.RequireRole("cacelarVenda"));
     options.AddPolicy("DashboardPolicy", policy =>
       policy.RequireRole("dashboard"));
+    options.AddPolicy("transacaoPolicy", policy =>
+      policy.RequireRole("caixaTransacao"));
+    options.AddPolicy("clientesPolicy", policy =>
+      policy.RequireRole("clientes"));
 });
 
 

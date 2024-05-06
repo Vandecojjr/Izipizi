@@ -15,7 +15,12 @@
             <MudNavLink Href="venda" Icon="@Icons.Material.Filled.PointOfSale"><h5>Vendas</h5></MudNavLink>
          </Authorized>
     </AuthorizeView>
-    <AuthorizeView Roles="EasyAdmin,Admin,caixa">
+    <AuthorizeView Roles="EasyAdmin,Admin,clientes">
+        <Authorized>
+            <MudNavLink Href="clientes" Icon="@Icons.Material.Filled.AccountCircle"><h5>Clientes</h5></MudNavLink>
+        </Authorized>
+    </AuthorizeView>
+    <AuthorizeView Roles="EasyAdmin,Admin,caixa, caixaTransacao">
          <Authorized>
             <MudNavLink Href="caixa" Icon="@Icons.Material.Filled.AttachMoney"><h5>Caixa</h5></MudNavLink>
         </Authorized>

@@ -1,5 +1,7 @@
-﻿@rendermode InteractiveServer
+﻿@page "/clientes"
+@rendermode InteractiveServer
 @attribute [StreamRendering]
+@attribute [Authorize(Roles = "EasyAdmin, Admin, clientes")]
 @inject IClienteServices ClienteServices
 @inject IProdutoVendidoServices ProdutoVendidoServices
 @inject IFormaDePagamentoServices FormaDePagamentoServices
