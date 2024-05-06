@@ -5,12 +5,12 @@
 @inject IProdutoServices ProdutoServices
 @inject IVendaServices VendasServices
 @inject IProdutoVendidoServices ProdutosVendidosServices
-
+@inject IEmAbertoServices EmAbertoServices
 @inject IUsuarioServices UsuarioServices
 @inject NavigationManager NavigationManager
+@inject IFormaDePagamentoServices FormasDePagamentoServices
+@inject IMetodoDePagamentoServices MetodosServices
 
-@if (!carregando)
-{
 <MudContainer Class=" px-2" MaxWidth="MaxWidth.False">
     <MudGrid>
         <MudItem xs="12" sm="12" md="12">
@@ -21,91 +21,268 @@
             </MudPaper>
         </MudItem>
   
+        @* total de vendas *@
         <MudItem xs="12" sm="12" md="6" xl="3">
-                <MudPaper Elevation="2" Class="pa-4" Style="background:#1C7293;">
-                <H6 class="d-flex justify-content-center text-light">Total de vendas</H6>
-                <MudDivider/>
-                    <h3 class="d-flex justify-content-center text-light">@(string.Format("{0:C}", totalDeVendas))</h3>
+                <MudPaper Elevation="2" Class="pa-4 h-100" Style="background:#1C7293;">
+                    @if (loadVendas)
+                    {
+                    <div class="d-flex justify-content-center">
+                            <MudProgressCircular Style="color:white;" Indeterminate="true" />
+                        </div>
+                    }
+                    else
+                    {
+                        <H6 class="d-flex justify-content-center text-light">Total de vendas</H6>
+                         <MudDivider/>
+                        <h3 class="d-flex justify-content-center text-light">@(string.Format("{0:C}", totalDeVendas))</h3>
+                    } 
             </MudPaper>
         </MudItem>
+        @* luco das vendas *@
             <MudItem xs="12" sm="12" md="6" xl="3">
-                <MudPaper Elevation="2" Class="pa-4" Style="background:#1C7293;">
-                <H6 class="d-flex justify-content-center text-light">Lucro das vendas</H6>
-                <MudDivider/>
-                    <h3 class="d-flex justify-content-center text-light">@(string.Format("{0:C}", totalDeLucro))</h3>
+            <MudPaper Elevation="2" Class="pa-4 h-100" Style="background:#1C7293;">
+                    @if (loadVendas)
+                    {
+                        <div class="d-flex justify-content-center">
+                            <MudProgressCircular Style="color:white;" Indeterminate="true" />
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="d-flex justify-content-between">
+                            <div></div>
+                            <H6 class="text-light" >Lucro das vendas</H6>
+                            <MudIconButton Class="justify-content-end" Style="color: white;" Icon="@Icons.Material.Filled.RotateRight" Size="Size.Small" aria-label="modo porcentagem" OnClick="() => lucroPorcentOuNao = !lucroPorcentOuNao"></MudIconButton>
+                        </div>
+                        <MudDivider />
+                        <h3 class="d-flex justify-content-center text-light">@(lucroPorcentOuNao == false ? string.Format("{0:C}", totalDeLucro) : string.Format("{0:P}", totalDeVendas == 0 ? 0 : (totalDeLucro / (totalDeVendas - totalDeLucro))))</h3>
+                    }
+                
             </MudPaper>
         </MudItem>
-            <MudItem xs="12" sm="6" md="6" xl="3">
-                <MudPaper Elevation="2" Class="pa-4" Style="background:#1C7293;">
-                <H6 class="d-flex justify-content-center text-light">Total em produtos</H6>
-                <MudDivider/>
+        @* total nas formas de pagamento *@
+        <MudItem xs="12" sm="12" md="6" xl="3">
+            <MudPaper Elevation="2" Class="pa-4 h-100" Style="background:#1C7293;">
+                @if (loadVendasPorMetodos)
+                {
+                    <div class="d-flex justify-content-center">
+                        <MudProgressCircular Style="color:white;" Indeterminate="true" />
+                    </div>
+                }
+                else
+                {
+                     <MudCarousel Class="h-100" ShowArrows="true" ShowBullets="false" TData="object">
+                    @foreach (var item in MetodosDePagamento)
+                    {
+                        <MudCarouselItem>
+                        
+                                    <H6 class="d-flex justify-content-center text-light">Total vendido em @item.Nome</H6>
+                                    <MudDivider/>
+                                    <h3 class="d-flex justify-content-center text-light">@(string.Format("{0:C}", FormasDePagamento.Where(x => x.NomeDoMetodo == item.Nome).Sum(x => x.Valor)))</h3>
+                            
+                        </MudCarouselItem>
+                    }
+                    </MudCarousel>
+                }
+           
+            </MudPaper>
+                
+        </MudItem>
+        @* Total em aberto *@
+        <MudItem xs="12" sm="12" md="6" xl="3">
+                <MudPaper Elevation="2" Class="pa-4 h-100" Style="background:#1C7293;">
+                @if (loadEmAberto)
+                {
+                    <div class="d-flex justify-content-center">
+                        <MudProgressCircular Style="color:white;" Indeterminate="true" />
+                    </div>
+                }
+                else
+                {
+                    <H6 class="d-flex justify-content-center text-light">Total de vendas abertas</H6>
+                    <MudDivider/>
+                    <h3 class="d-flex justify-content-center text-light">@(string.Format("{0:C}", vendasEmAberto.Sum(x => x.Total)))</h3>
+                }
+            </MudPaper>
+        </MudItem>
+            @* Total em produtos *@
+        <MudItem xs="12" sm="6" md="6" xl="6">
+            <MudPaper Elevation="2" Class="pa-4 h-100" Style="background:#1C7293;">
+                @if (loadProdutos)
+                {
+                    <div class="d-flex justify-content-center">
+                        <MudProgressCircular Style="color:white;" Indeterminate="true" />
+                    </div>
+                }
+                else
+                {
+                    <H6 class="d-flex justify-content-center text-light">Total em produtos</H6>
+                    <MudDivider/>
                     <h3 class="d-flex justify-content-center text-light">@(string.Format("{0:C}", totalDeProdutosEmEstoque))</h3>
+                }
+                
             </MudPaper>
         </MudItem>
-            <MudItem xs="12" sm="12" md="6" xl="3">
-                <MudPaper Elevation="2" Class="pa-4" Style="background:#1C7293;">
-                <H6 class="d-flex justify-content-center text-light">Total de custo dos produtos</H6>
-                <MudDivider/>
+        <MudItem xs="12" sm="12" md="6" xl="6" Class="pa-4 h-100">
+                <MudPaper Elevation="2" Class="pa-4 h-100" Style="background:#1C7293;">
+                @if (loadProdutos)
+                {
+                    <div class="d-flex justify-content-center">
+                        <MudProgressCircular Style="color:white;" Indeterminate="true" />
+                    </div>
+                }
+                else
+                {
+                    <H6 class="d-flex justify-content-center text-light">Total de custo dos produtos</H6>
+                    <MudDivider/>
                     <h3 class="d-flex justify-content-center text-light">@(string.Format("{0:C}", totalDeProdutosEmEstoqueCusto))</h3>
+                }
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12" sm="6">
+            <MudPaper Elevation="2" Class="pa-4 h-100">
+                @if (loadVendas)
+                {
+                    <div class="d-flex justify-content-center">
+                        <MudProgressCircular Style="color:#1C7293;" Indeterminate="true" />
+                    </div>
+                }
+                else
+                {
+                    <h5>Top 5 produtos mais vendidos</h5>
+                    <MudChart ChartType="ChartType.Pie" InputData="@produtosMaisVendidos" @bind-SelectedIndex="Index" InputLabels="@produtosMaisVendidosNomes" Width="300px" Height="330px" />
+                }
             </MudPaper>
         </MudItem>
         <MudItem xs="12" sm="6">
             <MudPaper Elevation="2" Class="pa-4">
-                <h5>Top 5 produtos mais vendidos</h5>
-                <MudChart ChartType="ChartType.Pie" InputData="@produtosMaisVendidos" @bind-SelectedIndex="Index" InputLabels="@produtosMaisVendidosNomes" Width="300px" Height="330px" />
+                @if (loadProdutos)
+                {
+                    <div class="m-auto">
+                        <MudProgressCircular Style="color:#1C7293;" Indeterminate="true" />
+                    </div>
+                }
+                else
+                {
+                    <h5>Vendas no periodo de 1 Ano</h5>
+                    <MudChart ChartType="ChartType.Line" ChartSeries="@Series" @bind-SelectedIndex="Index" XAxisLabels="@XAxisLabels" Width="100%" ChartOptions="@Options" Height="330px" />
+                }
             </MudPaper>
         </MudItem>
-        <MudItem xs="12" sm="6">
-            <MudPaper Elevation="2" Class="pa-4">
-                <h5>Vendas no periodo de 1 Ano</h5>
-                <MudChart ChartType="ChartType.Line" ChartSeries="@Series" @bind-SelectedIndex="Index" XAxisLabels="@XAxisLabels" Width="100%" ChartOptions="@Options" Height="330px" />
+        <MudItem xs="12" sm="12" Style="height:300px;">
+            <MudPaper Elevation="2" Class="pa-4 h-100" Style="overflow-y:auto;">
+                @if (loadProdutosDoMes)
+                {
+                    <div class="m-auto">
+                        <MudProgressCircular Style="color:#1C7293;" Indeterminate="true" />
+                    </div>
+                }
+                else
+                {
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Nome</th>
+                                    <th>Qtd.</th>
+                                    <th>Valor</th>
+                                    <th>Desc.</th>
+                                    <th>Lucro</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var item in produtosDoMes)
+                                {
+                                    <tr>
+                                        <td>@item.Nome</td>
+                                        <td>@item.Quantidade</td>
+                                        <td>@item.valor</td>
+                                        <td>@item.Desconto</td>
+                                        <td>@item.Lucro</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
             </MudPaper>
         </MudItem>
         <MudItem xs="12" sm="6" md="4">
-                <MudPaper Elevation="2" Class="pa-4" Style="background:#1C7293;">
-                <H6 class="d-flex justify-content-center text-light">Total de produtos em estoque</H6>
-                <MudDivider/>
+                <MudPaper Elevation="2" Class="pa-4 h-100" Style="background:#1C7293;">
+                @if (loadProdutos)
+                {
+                    <div class="d-flex justify-content-center">
+                        <MudProgressCircular Style="color:white;" Indeterminate="true" />
+                    </div>
+                }
+                else
+                {
+                    <H6 class="d-flex justify-content-center text-light">Total de produtos em estoque</H6>
+                    <MudDivider/>
                     <h1 class="d-flex justify-content-center text-light">@totalProdutoEmEstoque</h1>
+                }
             </MudPaper>
         </MudItem>
         <MudItem xs="12" sm="6" md="4">
-                <MudPaper Elevation="2" Class="pa-4" Style="background:#1C7293;">
-                <H6 class="d-flex justify-content-center text-light">Ticket médio</H6>
-                <MudDivider/>
+                <MudPaper Elevation="2" Class="pa-4 h-100" Style="background:#1C7293;">
+                @if (loadTicket)
+                {
+                    <div class="d-flex justify-content-center">
+                        <MudProgressCircular Style="color:white;" Indeterminate="true" />
+                    </div>
+                }
+                else
+                {
+                    <H6 class="d-flex justify-content-center text-light">Ticket médio</H6>
+                    <MudDivider/>
                     <h1 class="d-flex justify-content-center text-light">@(string.Format("{0:C}", ticketMedio))</h1>
+                }
             </MudPaper>
         </MudItem>
         <MudItem xs="12" sm="6" md="4">
-                <MudPaper Elevation="2" Class="pa-4" Style="background:#1C7293;">
-                <H6 class="d-flex justify-content-center text-light">Total de perdas</H6>
-                <MudDivider/>
+                <MudPaper Elevation="2" Class="pa-4 h-100" Style="background:#1C7293;">
+                @if (loadPerdas)
+                {
+                    <div class="d-flex justify-content-center">
+                        <MudProgressCircular Style="color:white;" Indeterminate="true" />
+                    </div>
+                }
+                else
+                {
+                    <H6 class="d-flex justify-content-center text-light">Total de perdas</H6>
+                   <MudDivider/>
                     <h1 class="d-flex justify-content-center text-light">@(string.Format("{0:C}", perdaTotal))</h1>
+                }
             </MudPaper>
         </MudItem>
        <MudItem xs="12" sm="12" md="12">
-                <MudPaper Elevation="2" Class="pa-4" Style="background:#1C7293;">
-                <H6 class="d-flex justify-content-center text-light">Despesas</H6>
-                <MudDivider/>
+                <MudPaper Elevation="2" Class="pa-4 h-100" Style="background:#1C7293;">
+                @if (loadDispesas)
+                {
+                    <div class="d-flex justify-content-center">
+                        <MudProgressCircular Style="color:white;" Indeterminate="true" />
+                    </div>
+                }
+                else
+                {
+                     <H6 class="d-flex justify-content-center text-light">Despesas</H6>
+                    <MudDivider/>
                     <h1 class="d-flex justify-content-center text-light">@(string.Format("{0:C}", despesas))</h1>
+                }
             </MudPaper>
         </MudItem>
     </MudGrid>
 </MudContainer>
-}
-else
-{
-    <MudProgressLinear Color="Color.Info" Indeterminate="true"/>
-}
 
 @code {
-    private bool carregando = true;
     List<Produto> produtos = new List<Produto>();
     List<Venda> vendas = new List<Venda>();
     List<ProdutoVendido> produtosVendidos = new List<ProdutoVendido>();
     List<decimal> vendasChar = new List<decimal>();
     List<ProdutoVendido> produtosDoMes = new List<ProdutoVendido>();
-
-
+    List<MetodoDePagamento> MetodosDePagamento = new List<MetodoDePagamento>();
+    List<EmAberto> vendasEmAberto = new List<EmAberto>();
+    List<FormaDePagamento> FormasDePagamento = new List<FormaDePagamento>();
     List<ProdutoMaisVendido> produtosVendido2 = new List<ProdutoMaisVendido>();
 
     List<double> quantidades = new List<double>();
@@ -130,6 +307,18 @@ else
     public decimal? despesas = 0;
     public int? totalProdutoEmEstoque = 0;
 
+    public bool lucroPorcentOuNao { get; set; }
+
+    public bool loadVendas = true;
+    public bool loadEmAberto = true;
+    public bool loadVendasPorMetodos = true;
+    public bool loadProdutos = true;
+    public bool loadVendasChar = true;
+    public bool loadTicket = true;
+    public bool loadPerdas = true;
+    public bool loadDispesas = true;
+    public bool loadProdutosDoMes = true;
+
 
     public DateTime? dataInicial = DateTime.Today;
     public DateTime? dataFinal = DateTime.Today;
@@ -139,15 +328,10 @@ else
         bool usuarioAtivo = await UsuarioServices.GetUsuarioAtivo();
         if (!usuarioAtivo) NavigationManager.NavigateTo("/pagamento");
 
-        produtos = await ProdutoServices.GetAllProdutosAsync();
         vendasChar = await VendasServices.ObterVendasDosMeses();
-
+        loadVendasChar = false;
+        MetodosDePagamento = await MetodosServices.GetAllMetodosAsync();
         await FiltrarVendas();
-        foreach (var item in produtos)
-        {
-            totalDeProdutosEmEstoque += item.Valor * item.Quantidade;
-            totalDeProdutosEmEstoqueCusto += item.ValorDeCusto * item.Quantidade;
-        }
         double[] vendasDouble = vendasChar.Select(x => Convert.ToDouble(x)).ToArray();
 
         // Inicialize a propriedade Series
@@ -159,37 +343,51 @@ else
         await TotaldeProdutosEmEstoque();
         await TicketMedio();
         await CalcularPerdas();
-        carregando = false;
-
+        vendasEmAberto = await EmAbertoServices.GetAllEmAberto();
+        loadEmAberto = false;
     }
 
     public async Task FiltrarVendas()
     {
+        loadVendas = true;
+        loadTicket = true;
+        loadPerdas = true;
+        loadDispesas = true;
+        loadVendasPorMetodos = true;
+        loadProdutosDoMes = true;
         vendas = await VendasServices.ObterVendasPorDataAsync(dataInicial, dataFinal);
         produtosDoMes.Clear();
-
         totalDeVendas = 0;
         totalDeLucro = 0;
         foreach (var venda in vendas)
         {
-            List<ProdutoVendido> produtosvendidosPorvenda = new List<ProdutoVendido>();
             totalDeVendas += venda.Total;
             totalDeLucro += venda.Lucro;
-            produtosvendidosPorvenda = await ProdutosVendidosServices.GetProdutosVendidosAsync(venda);
-
-            foreach (var item in produtosvendidosPorvenda)
-            {
-                produtosDoMes.Add(item);
-            }
+            List<ProdutoVendido> produtosvendidosPorvenda = await ProdutosVendidosServices.GetProdutosVendidosAsync(venda);
+            produtosDoMes.AddRange(produtosvendidosPorvenda);
 
         }
+        loadVendas = false;
         produtosMaisVendidos = new double[produtosDoMes.Count];
         produtosMaisVendidosNomes = new string[produtosDoMes.Count];
         await ProdutosMaisVendidos();
         await ProdutosMaisVendidos2();
         await TicketMedio();
+        await CalcularPerdas();
+        loadPerdas = false;
         despesas = await ProdutosVendidosServices.TotalDeDispesasPorPeriodo(dataInicial, dataFinal);
+        loadDispesas = false;
+        FormasDePagamento.Clear();
+        foreach (var item in vendas)
+        {
+            var formas = await FormasDePagamentoServices.GetFormaDePagamentos(item);
+            FormasDePagamento.AddRange(formas);
+        }
+        loadVendasPorMetodos = false;
+        CalcularProdutosDoMes();
+        loadProdutosDoMes = false;
     }
+
 
 
     class ProdutoMaisVendido
@@ -264,42 +462,44 @@ else
 
     public async Task TotaldeProdutosEmEstoque()
     {
-        List<Produto> prodCalculo = new List<Produto>();
-        prodCalculo = await ProdutoServices.GetAllProdutosAsync();
-        foreach (var item in prodCalculo)
-        {
-            if (item.Quantidade != null) totalProdutoEmEstoque += item.Quantidade;
-
-        }
+        produtos = await ProdutoServices.GetAllProdutosAsync();
+        totalProdutoEmEstoque = produtos.Sum(x => x.Quantidade);
+        totalDeProdutosEmEstoque = produtos.Sum(x => x.Valor * x.Quantidade);
+        totalDeProdutosEmEstoqueCusto = produtos.Sum(x => x.ValorDeCusto * x.Quantidade);
+        loadProdutos = false;
     }
     public async Task TicketMedio()
     {
-        decimal total = 0;
-        int totalDevendas = 0;
-        foreach (var item in vendas)
-        {
-            total += item.Total;
-            totalDevendas += 1; 
-        }
-        if (totalDevendas > 0)
-        {
-            ticketMedio = total / totalDevendas;
-        }
-        else
-        {
-            ticketMedio = 0;
-        }
-        
+        ticketMedio = vendas.Count() == 0 ? ticketMedio = 0:vendas.Sum(x => x.Total) / vendas.Count();
+        loadTicket = false;
     }
     public async Task CalcularPerdas()
     {
-        List<LogPrecoProduto> logs = new List<LogPrecoProduto>();
-        logs = await ProdutoServices.GetAllLogsPorPeriodo(dataInicial , dataFinal);
+        List<LogPrecoProduto> logs = await ProdutoServices.GetAllLogsPorPeriodo(dataInicial, dataFinal);
         foreach (var item in logs)
         {
             Produto produtoTeste = produtos.FirstOrDefault(x => x.Id == item.IdProduto);
             if (item.Tag == "perda") perdaTotal += produtoTeste.ValorDeCusto * item.Quantidade;
         }
     }
+    public void CalcularProdutosDoMes()
+    {
+        List<ProdutoVendido> doMesCopia = new List<ProdutoVendido>();
+        foreach (var item in produtosDoMes)
+        {
+            if (!doMesCopia.Any(x => x.Nome == item.Nome))
+            {
+                var items = produtosDoMes.Where(x => x.Nome == item.Nome);
+                item.Desconto = items.Sum(x => x.Desconto);
+                item.Lucro = items.Sum(x => x.Lucro);
+                item.valor = items.Sum(x => x.valor);
+                item.Quantidade = items.Sum(x => x.Quantidade);
 
+                doMesCopia.Add(item);
+            }
+        }
+        produtosDoMes = doMesCopia.OrderBy(x => x.Quantidade).ToList();
+        produtosDoMes.Reverse();
+    }
+    
 }

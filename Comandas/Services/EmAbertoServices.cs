@@ -12,6 +12,7 @@ namespace Comandas.Services
         private readonly ApplicationDbContext _context;
         private readonly CurrentUserService _user;
         private readonly IProdutoServices _produtoServices;
+        private readonly SemaphoreSlim _semaphore = new SemaphoreSlim(1);
 
         public EmAbertoServices(ApplicationDbContext context, CurrentUserService user, IProdutoServices produtoServices)
         {
@@ -57,6 +58,7 @@ namespace Comandas.Services
 
         public async Task AddProdutoEmAberto(List<ProdutoVendido> produtos, int comanda, string vendedor)
         {
+            await _semaphore.WaitAsync();
             try
             {
                 using (var transactionScope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
@@ -67,7 +69,7 @@ namespace Comandas.Services
 
 
                     decimal? total = 0;
-                    var vendaEmAberto = await _context.VendasEmAberto.FirstOrDefaultAsync(x => x.Numero == comanda && x.IdDoUsuario == userId);
+                    EmAberto vendaEmAberto = await _context.VendasEmAberto.FirstOrDefaultAsync(x => x.Numero == comanda && x.IdDoUsuario == userId);
                     if(vendaEmAberto != null) 
                     { 
                         foreach (var item in produtos)
@@ -92,9 +94,9 @@ namespace Comandas.Services
                             await _produtoServices.UpdateProdutoAsync(ajustarEstoque, true);
                         }
                         vendaEmAberto.Total += total == null ? 0 : (decimal)total;
+                        await AddHistorico(total == null ? 0 : (decimal)total, userId, true, vendaEmAberto.Id);
                         _context.Entry(vendaEmAberto).State = EntityState.Modified;
                         await _context.SaveChangesAsync();
-                        await AddHistorico(total == null ? 0 : (decimal)total, userId, true, vendaEmAberto.Id);
                     }
                         transactionScope.Complete(); // Marca a transação como concluída
                 }
@@ -103,6 +105,10 @@ namespace Comandas.Services
             {
 
                 throw;
+            }
+            finally
+            {
+                _semaphore.Release(); // Libera o semáforo após a conclusão do método
             }
         }
 
