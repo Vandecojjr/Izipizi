@@ -115,6 +115,10 @@
 </MudGrid>
 </MudContainer>
 
+
+<script src='//fw-cdn.com/11598604/4249171.js'
+        chat='true'>
+</script>
 @code {
     private string? errorMessage;
 
@@ -143,6 +147,7 @@
         var result = await SignInManager.PasswordSignInAsync(Input.Email, Input.Password, Input.RememberMe, lockoutOnFailure: false);
         if (result.Succeeded)
         {
+            
             Logger.LogInformation("User logged in.");
             RedirectManager.RedirectTo("/");
             

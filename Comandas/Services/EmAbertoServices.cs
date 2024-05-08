@@ -68,35 +68,49 @@ namespace Comandas.Services
                     if (userCurrent.nivelAdmin == 2) userId = userCurrent.IdDoProprietario;
 
 
-                    decimal? total = 0;
+                    decimal? total = produtos.Sum(x => x.valor * x.Quantidade);
                     EmAberto vendaEmAberto = await _context.VendasEmAberto.FirstOrDefaultAsync(x => x.Numero == comanda && x.IdDoUsuario == userId);
                     if(vendaEmAberto != null) 
-                    { 
-                        foreach (var item in produtos)
-                        {
-                            ProdutosEmAberto produto = new();
-                            var ajustarEstoque = await _context.Produtos.FirstOrDefaultAsync(x => x.Id == item.IdDoProduto);
-                            total += item.valor * item.Quantidade;
-                            ajustarEstoque.Quantidade -= item.Quantidade;
-
-
-                            if (vendedor == null) produto.Vendedor = userCurrent.Email;
-                            else produto.Vendedor = vendedor;
-                            produto.IdDoProduto = item.IdDoProduto;
-                            produto.NomeProduto = item.Nome;
-                            produto.NumeroComanda = comanda;
-                            produto.Quantidade = item.Quantidade == null ? 0 : (int)item.Quantidade;
-                            produto.IdDoUsuario = userId;
-                            produto.DataDaVenda = DateTime.Now;
-                            produto.total = item.valor * item.Quantidade;
-
-                            _context.Add(produto);
-                            await _produtoServices.UpdateProdutoAsync(ajustarEstoque, true);
-                        }
+                    {
+                        bool prosseguir = true;
+                        if(total == null) prosseguir = false;
                         vendaEmAberto.Total += total == null ? 0 : (decimal)total;
-                        await AddHistorico(total == null ? 0 : (decimal)total, userId, true, vendaEmAberto.Id);
-                        _context.Entry(vendaEmAberto).State = EntityState.Modified;
-                        await _context.SaveChangesAsync();
+                        try
+                        {
+                            _context.Entry(vendaEmAberto).State = EntityState.Modified;
+                        }
+                        catch (Exception)
+                        {
+                            prosseguir = false;
+                            throw;
+                        }
+                        if (prosseguir)
+                        {
+                            foreach (var item in produtos)
+                            {
+                                ProdutosEmAberto produto = new();
+                                var ajustarEstoque = await _context.Produtos.FirstOrDefaultAsync(x => x.Id == item.IdDoProduto);
+                                ajustarEstoque.Quantidade -= item.Quantidade;
+
+
+                                if (vendedor == null) produto.Vendedor = userCurrent.Email;
+                                else produto.Vendedor = vendedor;
+                                produto.IdDoProduto = item.IdDoProduto;
+                                produto.NomeProduto = item.Nome;
+                                produto.NumeroComanda = comanda;
+                                produto.Quantidade = item.Quantidade == null ? 0 : (int)item.Quantidade;
+                                produto.IdDoUsuario = userId;
+                                produto.DataDaVenda = DateTime.Now;
+                                produto.total = item.valor * item.Quantidade;
+
+                                _context.Add(produto);
+                                await _produtoServices.UpdateProdutoAsync(ajustarEstoque, true);
+                            }
+                        
+                        
+                            await _context.SaveChangesAsync();
+                            await AddHistorico(total == null ? 0 : (decimal)total, userId, true, vendaEmAberto.Id);
+                        }
                     }
                         transactionScope.Complete(); // Marca a transação como concluída
                 }
@@ -144,7 +158,7 @@ namespace Comandas.Services
             if(venda != null)
             {
                 venda.Total -= valor;
-                if(Math.Round(venda.Total, 2) <=0) { await DeletarEmAberto(numero); }
+                if(Math.Round(venda.Total, 2) <= 0) { await DeletarEmAberto(numero); }
                 else
                 {
                     _context.Entry(venda).State = EntityState.Modified;

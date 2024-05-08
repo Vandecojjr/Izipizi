@@ -32,24 +32,24 @@ namespace Comandas.Services
 
         public async Task AddVendaAsync(Venda venda, List<ProdutoVendido> produtosVendidos, List<FormaDePagamento> formasDePagamento)
         {
+            var userId = await _user.GetCurrentUserIdAsync();
+            var userCurrent = await _context.Users.FirstOrDefaultAsync(x => x.Id == userId);
+            if (userCurrent.nivelAdmin == 2) userId = userCurrent.IdDoProprietario;
+            var userNome = userCurrent.Email;
+
             Cliente cliente = null;
             if (venda.IdCliente != null)
             {
                  cliente = await _clienteServices.GetCliente((Guid)venda.IdCliente);
             }
-            var vendas = await GetAllVendasAsync();
-            var userId = await _user.GetCurrentUserIdAsync();
-            var userCurrent = await _context.Users.FirstOrDefaultAsync(x => x.Id == userId);
-            if (userCurrent.nivelAdmin == 2) userId = userCurrent.IdDoProprietario;
-            var userNome = await _user.GetCurrentUserNameAsync();
+            decimal? Conferetroco = formasDePagamento.Sum(x => x.Valor != null? x.Valor : 0);
+            decimal? ajustaLimite = formasDePagamento.Where(x => x.NomeDoMetodo == "A prazo").Sum(x => x.Valor != null ? x.Valor : 0);
+            var maiorVendaNumero = await _context.Vendas.Where(x => x.IdUsuario == userId).MaxAsync(x => x.Numero);
+            venda.Numero = maiorVendaNumero == 0 ? 1 : maiorVendaNumero + 1;
             venda.IdUsuario = userId;
             venda.NomeDoUsuario = userNome;
             venda.DataDaVenda = DateTime.Now;
-            venda.Numero = 0;
             venda.Lucro = 0;
-            decimal ajustaLimite = 0;
-
-            
 
             foreach (var item in produtosVendidos)
             {
@@ -60,27 +60,13 @@ namespace Comandas.Services
                 venda.Lucro += item.Lucro;
             }
 
-            
-
             venda.Lucro -= venda.Descontos;
-
-            if (vendas.Count != 0)
-            {
-                foreach (var item in vendas)
-                {
-                    if (item.Numero > venda.Numero) venda.Numero = item.Numero;
-                }
-                venda.Numero += 1 ;
-            }
-            else 
-            {
-                venda.Numero = 1;
-            }
 
             if (cliente != null)
             {
                 venda.IsPrazo = true;
                 venda.IsPago = false;
+                cliente.LimiteRestante -= ajustaLimite;
                 await _clienteServices.AtualizarCliente(cliente);
             }
             _context.Add(venda);
@@ -91,31 +77,19 @@ namespace Comandas.Services
                 await _produtoVendidoServices.AddProdutoVendidoAsync(item, venda.Numero, venda);
             }
 
-            decimal Conferetroco = 0;
             foreach (var item in formasDePagamento)
             {
-                if (Math.Round(item.Valor == null ? 0 : (decimal)item.Valor) > 0)
+                if (item.Valor != null || Math.Round(item.Valor == null ? 0 : (decimal)item.Valor, 2) != 0)
                 {
-                    var nomeDoMetodo = await _context.MetodosDePagamento.FirstOrDefaultAsync(x => x.Id == item.MetodoDePagamentoId);
-                    Conferetroco += item.Valor == null ? 0 : (decimal)item.Valor;
-                    if (nomeDoMetodo.Nome == "A prazo")
-                    {
-                        ajustaLimite += item.Valor == null ? 0 : (decimal)item.Valor;
-                    }
-                    await _formaDePagamentoServices.AddFormaDePAgamento(item, venda);
+                     await _formaDePagamentoServices.AddFormaDePAgamento(item, venda);
                 }
-            }
-            if (cliente != null)
-            {
-                cliente.LimiteRestante -= ajustaLimite;
-                await _clienteServices.AtualizarCliente(cliente);
             }
 
             if (Conferetroco > venda.Total)
             {
                 var metodoPadrao = await _context.MetodosDePagamento.FirstOrDefaultAsync(x => x.IdDoUsuario == userId && x.Padrao == true);
                 Transacao transacao = new Transacao();
-                transacao.Valor = Conferetroco - venda.Total;
+                transacao.Valor = (decimal)Conferetroco - venda.Total;
                 transacao.Tipo = false;
                 transacao.Nome = $"Venda N° {venda.Numero} Troco.";
                 transacao.MetodoId = metodoPadrao.Id;

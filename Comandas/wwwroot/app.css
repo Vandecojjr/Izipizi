@@ -100,3 +100,4 @@ h1:focus {
     max-height: 500px; /* Altura máxima da lista de opções */
     overflow-y: auto; /* Adiciona uma barra de rolagem vertical se a lista de opções exceder a altura máxima */
 }
+

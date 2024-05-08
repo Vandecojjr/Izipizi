@@ -256,7 +256,10 @@
                                     }
                                 }
                             </select>
-
+                            @if (!tipoDaTransacao)
+                            {
+                            <MudSwitch Color="Color.Success" @bind-Value="NovaTransacao.Despesa" Label="Despesa"></MudSwitch>
+                        }
                         </div>
                         <div class="modal-footer">
                             <MudButton ButtonType="ButtonType.Submit" Class="mx-3" Variant="Variant.Filled" Color="Color.Success">Realizar transação</MudButton>
@@ -441,6 +444,7 @@
         metodosDePagamento2 = metodosDePagamento;
         metodosDePagamento = metodosDePagamento.Where(x => x.Nome != "A prazo").ToList();
         transacoes = await TransacaoServices.GetAllTrasacoesAsync();
+        transacoes.Reverse();
         await CalcularMetodosDefechamento();
         StateHasChanged();
     }

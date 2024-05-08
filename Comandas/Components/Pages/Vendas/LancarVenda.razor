@@ -441,7 +441,7 @@ else if (bloqueioModal)
             <MudSwitch Class="ms-10" @bind-Value="modoPorcent" Label="%" Color="Color.Success" />
         </MudItem>
         <MudItem @onkeydown="HandleKeyDown">
-            <MudButton OnClick="() => LancarProduto(produtoSelecionado, quantidade, desconto)" Title="Enter" Class="mt-6 ms-6" Color="Color.Success">Lançar</MudButton>
+            <MudButton OnClick="() => LancarProduto(produtoSelecionado, (int)quantidade, desconto)" Title="Enter" Class="mt-6 ms-6" Color="Color.Success">Lançar</MudButton>
         </MudItem>
     </MudGrid>
             </MudFocusTrap>
@@ -694,7 +694,7 @@ window.scrollToSelectedOption = function (selectedIndex) {
     private Caixa caixaAtual = null;
     public Produto produtoSelecionado;
     private FormaDePagamento formaDePagamento = new();
-    private int quantidade = 1;
+    private int? quantidade { get; set; }
     private decimal acrecimo { get; set; }
     private decimal acrecimoVariavel { get; set; }
     private decimal desconto { get; set; }
@@ -756,7 +756,7 @@ window.scrollToSelectedOption = function (selectedIndex) {
         desconto = 0;
         descontoTotal = 0;
         descontoAlterado = 0;
-        quantidade = 1;
+        quantidade = null;
         produtosLancados.Clear();
         formasDePagamento = new();
         selectedCustomerName = null;
@@ -829,8 +829,7 @@ window.scrollToSelectedOption = function (selectedIndex) {
                     // Execute ação desejada, por exemplo, salvar os dados
                     await Task.Run(() =>
                     {
-
-                        LancarProduto(produtoSelecionado, quantidade, desconto);
+                        LancarProduto(produtoSelecionado, quantidade == null ? 1 :(int)quantidade, desconto);
                     });
                 }
             }
@@ -1079,7 +1078,7 @@ window.scrollToSelectedOption = function (selectedIndex) {
 
     public void LimparInputs()
     {
-        quantidade = 0;
+        quantidade = null;
         desconto = 0;
         produtoSelecionado = null;
     }
@@ -1192,7 +1191,7 @@ window.scrollToSelectedOption = function (selectedIndex) {
                 }
             }
             LimparInputs();
-            quantidade = 1;
+            quantidade = null;
             selectedCustomerName = null;
             selectedIndex = 0;
             await JSRuntime.InvokeVoidAsync("focusElementById", "autoComplit-input");

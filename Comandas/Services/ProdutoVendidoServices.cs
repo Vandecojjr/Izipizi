@@ -31,7 +31,7 @@ namespace Comandas.Services
             if (produtoAntigo.IsVolume)
             {
                 var codigo = produtoAntigo.CodigoDoProdutoVolume;
-                quantidade = produtoAntigo.QuantidadeVolume;
+                quantidade = produtoAntigo.QuantidadeVolume * quantidade;
                 produtoAntigo = await _produtoServices.GetProdutosByIdAsync((Guid)codigo);
             }
             produtoAntigo.Quantidade -= quantidade;
@@ -65,7 +65,7 @@ namespace Comandas.Services
                     if (produtoAntigo.IsVolume)
                     {
                         var codigo = produtoAntigo.CodigoDoProdutoVolume;
-                        quantidade = produtoAntigo.QuantidadeVolume;
+                        quantidade = produtoAntigo.QuantidadeVolume * quantidade;
                         produtoAntigo = await _produtoServices.GetProdutosByIdAsync((Guid)codigo);
                     }
                     produtoAntigo.Quantidade += quantidade;
@@ -74,23 +74,34 @@ namespace Comandas.Services
             }
         }
 
-        public async Task<decimal> TotalDeDispesasPorPeriodo(DateTime? inicial, DateTime? final)
+        public async Task<List<Despesa>> TotalDeDispesasPorPeriodo(DateTime? inicial, DateTime? final)
         {
             string userId = await _user.GetCurrentUserIdAsync();
             var userCurrent = await _context.Users.FirstOrDefaultAsync(x => x.Id == userId);
             if (userCurrent.nivelAdmin == 2) userId = userCurrent.IdDoProprietario;
+
             var produtosVendido = await _context.ProdutosVendidos.Where(x => x.DespesaDate.Date >= inicial && x.DespesaDate.Date <= final && x.IdDoUsuario == userId).ToListAsync();
-            decimal? total = 0;
-            if(produtosVendido.Count > 0)
+            var transacoes = await _context.transacoes.Where(x => x.Data.Date >= inicial && x.Data.Date <= final && x.UserId == userId && x.Despesa).ToListAsync();
+            List<Despesa> despesas = new List<Despesa>();
+
+            foreach (var item in produtosVendido)
             {
-                foreach (var item in produtosVendido)
-                {
-                    var prod = await _context.Produtos.FirstOrDefaultAsync(x => x.Id == item.IdDoProduto);
-                    if(prod != null) total += prod.Valor * item.Quantidade;
-                }
+                Despesa despesa = new Despesa();
+                despesa.Nome = item.Nome;
+                despesa.DataDespesa = item.DespesaDate;
+                despesa.Valor = (decimal)item.valor;
+                despesas.Add(despesa);
             }
 
-            return (decimal)total;
+            foreach (var item in transacoes)
+            {
+                Despesa despesa = new Despesa();
+                despesa.Nome = item.Nome;
+                despesa.DataDespesa = item.Data;
+                despesa.Valor = (decimal)item.Valor;
+                despesas.Add(despesa);
+            }
+            return despesas;
         }
     }
 }

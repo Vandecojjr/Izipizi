@@ -1,0 +1,74 @@
+﻿@page "/suporte"
+@page "/suporte/{userEmail}"
+
+@rendermode InteractiveServer
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@layout Comandas.Components.Layout.LayoutSuport
+@inject IJSRuntime JSRuntime
+@inject NavigationManager NavigationManager
+
+<h3>Suporte</h3>
+
+@if (recarregar)
+{
+    <script>
+        // Obtém a URL atual
+        var url = window.location.href;
+
+        // Extrai a parte do e-mail da URL usando regex
+        var emailPart = extrairEmailDaUrl(url);
+
+        window.fcSettings = {
+            onInit: function () {
+                window.fcWidget.setExternalId(emailPart);
+                window.fcWidget.user.setFirstName(emailPart);
+                window.fcWidget.user.setEmail(emailPart);
+                window.fcWidget.user.setProperties({
+                    plan: "Pro",                 // meta property 1
+                    status: "Active"            // meta property 2
+                });
+            }
+        }
+
+        // Função para extrair a parte do e-mail da URL usando regex
+        function extrairEmailDaUrl(url) {
+            var regex = /\/([^\/]+)$/; // Expressão regular para capturar a parte após a última barra
+            var match = regex.exec(url);
+            if (match) {
+                return match[1]; // Retorna o que foi capturado entre parênteses na regex
+            } else {
+                return null;
+            }
+        }
+    </script>
+
+    <script src='//fw-cdn.com/11598604/4249171.js'
+            chat='true'>
+    </script>
+
+}
+@code {
+    [Parameter]
+    public string userEmail { get; set; }
+    public bool recarregar { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authenticationState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authenticationState.User;
+        if (userEmail == null || userEmail != user.Identity.Name)
+        {
+
+            if (user.Identity?.IsAuthenticated ?? false)
+            {
+                userEmail = user.Identity.Name;
+            }
+            var urlEmail = $"/suporte/{userEmail}";
+            NavigationManager.NavigateTo(urlEmail);
+        }
+        else
+        {
+            recarregar = true;
+        }
+    }
+}

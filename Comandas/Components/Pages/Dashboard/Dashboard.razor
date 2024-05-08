@@ -1,6 +1,5 @@
 ﻿@page "/dashboard"
 @rendermode InteractiveServer
-@attribute [StreamRendering]
 @attribute [Authorize(Roles = "EasyAdmin, Admin, dashboard")]
 @inject IProdutoServices ProdutoServices
 @inject IVendaServices VendasServices
@@ -22,7 +21,7 @@
         </MudItem>
   
         @* total de vendas *@
-        <MudItem xs="12" sm="12" md="6" xl="3">
+        <MudItem xs="12" sm="12" md="3" xl="3">
                 <MudPaper Elevation="2" Class="pa-4 h-100" Style="background:#1C7293;">
                     @if (loadVendas)
                     {
@@ -32,14 +31,14 @@
                     }
                     else
                     {
-                        <H6 class="d-flex justify-content-center text-light">Total de vendas</H6>
+                        <H6 class="d-flex justify-content-center text-light">Total em vendas</H6>
                          <MudDivider/>
                         <h3 class="d-flex justify-content-center text-light">@(string.Format("{0:C}", totalDeVendas))</h3>
                     } 
             </MudPaper>
         </MudItem>
         @* luco das vendas *@
-            <MudItem xs="12" sm="12" md="6" xl="3">
+            <MudItem xs="12" sm="12" md="3" xl="3">
             <MudPaper Elevation="2" Class="pa-4 h-100" Style="background:#1C7293;">
                     @if (loadVendas)
                     {
@@ -99,33 +98,16 @@
                 }
                 else
                 {
-                    <H6 class="d-flex justify-content-center text-light">Total de vendas abertas</H6>
+                    <H6 class="d-flex justify-content-center text-light">Total em vendas abertas</H6>
                     <MudDivider/>
                     <h3 class="d-flex justify-content-center text-light">@(string.Format("{0:C}", vendasEmAberto.Sum(x => x.Total)))</h3>
                 }
             </MudPaper>
         </MudItem>
-            @* Total em produtos *@
-        <MudItem xs="12" sm="6" md="6" xl="6">
-            <MudPaper Elevation="2" Class="pa-4 h-100" Style="background:#1C7293;">
-                @if (loadProdutos)
-                {
-                    <div class="d-flex justify-content-center">
-                        <MudProgressCircular Style="color:white;" Indeterminate="true" />
-                    </div>
-                }
-                else
-                {
-                    <H6 class="d-flex justify-content-center text-light">Total em produtos</H6>
-                    <MudDivider/>
-                    <h3 class="d-flex justify-content-center text-light">@(string.Format("{0:C}", totalDeProdutosEmEstoque))</h3>
-                }
-                
-            </MudPaper>
-        </MudItem>
-        <MudItem xs="12" sm="12" md="6" xl="6" Class="pa-4 h-100">
+        @* Total em descontos *@
+        <MudItem xs="12" sm="12" md="3" xl="6">
                 <MudPaper Elevation="2" Class="pa-4 h-100" Style="background:#1C7293;">
-                @if (loadProdutos)
+                @if (loadVendas)
                 {
                     <div class="d-flex justify-content-center">
                         <MudProgressCircular Style="color:white;" Indeterminate="true" />
@@ -133,12 +115,30 @@
                 }
                 else
                 {
-                    <H6 class="d-flex justify-content-center text-light">Total de custo dos produtos</H6>
+                    <H6 class="d-flex justify-content-center text-light">Total em descontos</H6>
                     <MudDivider/>
-                    <h3 class="d-flex justify-content-center text-light">@(string.Format("{0:C}", totalDeProdutosEmEstoqueCusto))</h3>
+                    <h3 class="d-flex justify-content-center text-light">@(string.Format("{0:C}", vendas.Sum(x => x.Descontos)))</h3>
                 }
             </MudPaper>
         </MudItem>
+         @* Total de vendas *@
+        <MudItem xs="12" sm="12" md="3" xl="6">
+                <MudPaper Elevation="2" Class="pa-4 h-100" Style="background:#1C7293;">
+                @if (loadVendas)
+                {
+                    <div class="d-flex justify-content-center">
+                        <MudProgressCircular Style="color:white;" Indeterminate="true" />
+                    </div>
+                }
+                else
+                {
+                    <H6 class="d-flex justify-content-center text-light">Total de vendas</H6>
+                    <MudDivider/>
+                    <h3 class="d-flex justify-content-center text-light">@(vendas.Count())</h3>
+                }
+            </MudPaper>
+        </MudItem>
+            
         <MudItem xs="12" sm="6">
             <MudPaper Elevation="2" Class="pa-4 h-100">
                 @if (loadVendas)
@@ -180,9 +180,11 @@
                 else
                 {
                     <div class="table-responsive">
+                        <h5>Ranking dos produtos</h5>
                         <table class="table">
                             <thead>
                                 <tr>
+                                    <th></th>
                                     <th>Nome</th>
                                     <th>Qtd.</th>
                                     <th>Valor</th>
@@ -191,9 +193,11 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                @foreach (var item in produtosDoMes)
+                                @for (int i = 0; i < produtosDoMes.Count; i++)
                                 {
+                                    var item = produtosDoMes[i];
                                     <tr>
+                                        <td>@((i+1) + "°")</td>
                                         <td>@item.Nome</td>
                                         <td>@item.Quantidade</td>
                                         <td>@item.valor</td>
@@ -204,6 +208,75 @@
                             </tbody>
                         </table>
                     </div>
+                }
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12" sm="12" Style="height:300px;">
+            <MudPaper Elevation="2" Class="pa-4 h-100" Style="overflow-y:auto;">
+                @if (loadDispesas)
+                {
+                    <div class="m-auto">
+                        <MudProgressCircular Style="color:#1C7293;" Indeterminate="true" />
+                    </div>
+                }
+                else
+                {
+                    <div class="table-responsive">
+                        Despesas lançadas
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Nome</th>
+                                    <th>Data</th>
+                                    <th>Valor</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var item in ListaDespesas)
+                                {
+                                    <tr>
+                                        <td>@item.Nome</td>
+                                        <td>@item.DataDespesa</td>
+                                        <td>@item.Valor</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </MudPaper>
+        </MudItem>
+        @* Total em produtos *@
+        <MudItem xs="12" sm="6" md="6" xl="6">
+            <MudPaper Elevation="2" Class="pa-4 h-100" Style="background:#1C7293;">
+                @if (loadProdutos)
+                {
+                    <div class="d-flex justify-content-center">
+                        <MudProgressCircular Style="color:white;" Indeterminate="true" />
+                    </div>
+                }
+                else
+                {
+                    <H6 class="d-flex justify-content-center text-light">Total em produtos</H6>
+                    <MudDivider/>
+                    <h3 class="d-flex justify-content-center text-light">@(string.Format("{0:C}", totalDeProdutosEmEstoque))</h3>
+                }
+                
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12" sm="12" md="6" xl="6" Class="pa-4 h-100">
+                <MudPaper Elevation="2" Class="pa-4 h-100" Style="background:#1C7293;">
+                @if (loadProdutos)
+                {
+                    <div class="d-flex justify-content-center">
+                        <MudProgressCircular Style="color:white;" Indeterminate="true" />
+                    </div>
+                }
+                else
+                {
+                    <H6 class="d-flex justify-content-center text-light">Total de custo dos produtos</H6>
+                    <MudDivider/>
+                    <h3 class="d-flex justify-content-center text-light">@(string.Format("{0:C}", totalDeProdutosEmEstoqueCusto))</h3>
                 }
             </MudPaper>
         </MudItem>
@@ -267,12 +340,15 @@
                 {
                      <H6 class="d-flex justify-content-center text-light">Despesas</H6>
                     <MudDivider/>
-                    <h1 class="d-flex justify-content-center text-light">@(string.Format("{0:C}", despesas))</h1>
+                    <h1 class="d-flex justify-content-center text-light">@(string.Format("{0:C}", ListaDespesas.Sum(x => x.Valor)))</h1>
                 }
             </MudPaper>
         </MudItem>
     </MudGrid>
 </MudContainer>
+
+
+
 
 @code {
     List<Produto> produtos = new List<Produto>();
@@ -292,6 +368,7 @@
     string[] produtosMaisVendidosNomes { get; set; }
 
     public List<ChartSeries> Series = new List<ChartSeries>();
+    public List<Despesa> ListaDespesas = new List<Despesa>();
 
     private int Index = -1; //default value cannot be 0 -> first selectedindex is 0.
     public string[] XAxisLabels = { "Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez" };
@@ -304,7 +381,6 @@
     public decimal? totalDeLucro = 0;
     public decimal? ticketMedio = 0;
     public decimal? perdaTotal = 0;
-    public decimal? despesas = 0;
     public int? totalProdutoEmEstoque = 0;
 
     public bool lucroPorcentOuNao { get; set; }
@@ -328,9 +404,9 @@
         bool usuarioAtivo = await UsuarioServices.GetUsuarioAtivo();
         if (!usuarioAtivo) NavigationManager.NavigateTo("/pagamento");
 
+        MetodosDePagamento = await MetodosServices.GetAllMetodosAsync();
         vendasChar = await VendasServices.ObterVendasDosMeses();
         loadVendasChar = false;
-        MetodosDePagamento = await MetodosServices.GetAllMetodosAsync();
         await FiltrarVendas();
         double[] vendasDouble = vendasChar.Select(x => Convert.ToDouble(x)).ToArray();
 
@@ -340,11 +416,6 @@
             new ChartSeries() { Name = "Vendas", Data = vendasDouble },
         };
 
-        await TotaldeProdutosEmEstoque();
-        await TicketMedio();
-        await CalcularPerdas();
-        vendasEmAberto = await EmAbertoServices.GetAllEmAberto();
-        loadEmAberto = false;
     }
 
     public async Task FiltrarVendas()
@@ -355,28 +426,18 @@
         loadDispesas = true;
         loadVendasPorMetodos = true;
         loadProdutosDoMes = true;
-        vendas = await VendasServices.ObterVendasPorDataAsync(dataInicial, dataFinal);
-        produtosDoMes.Clear();
-        totalDeVendas = 0;
-        totalDeLucro = 0;
-        foreach (var venda in vendas)
-        {
-            totalDeVendas += venda.Total;
-            totalDeLucro += venda.Lucro;
-            List<ProdutoVendido> produtosvendidosPorvenda = await ProdutosVendidosServices.GetProdutosVendidosAsync(venda);
-            produtosDoMes.AddRange(produtosvendidosPorvenda);
 
-        }
+        //busca vendas e calcula relacionados
+        vendas = await VendasServices.ObterVendasPorDataAsync(dataInicial, dataFinal);
+        totalDeVendas = vendas.Sum(x => x.Total);
+        totalDeLucro = vendas.Sum(x => x.Lucro);
         loadVendas = false;
-        produtosMaisVendidos = new double[produtosDoMes.Count];
-        produtosMaisVendidosNomes = new string[produtosDoMes.Count];
-        await ProdutosMaisVendidos();
-        await ProdutosMaisVendidos2();
-        await TicketMedio();
-        await CalcularPerdas();
-        loadPerdas = false;
-        despesas = await ProdutosVendidosServices.TotalDeDispesasPorPeriodo(dataInicial, dataFinal);
-        loadDispesas = false;
+
+        //busca vendas em aberto
+        vendasEmAberto = await EmAbertoServices.GetAllEmAberto();
+        loadEmAberto = false;
+
+        // busca formas de pagamento
         FormasDePagamento.Clear();
         foreach (var item in vendas)
         {
@@ -384,11 +445,26 @@
             FormasDePagamento.AddRange(formas);
         }
         loadVendasPorMetodos = false;
+
+        await TicketMedio();
+        await CalcularPerdas();
+
+
+        ListaDespesas = await ProdutosVendidosServices.TotalDeDispesasPorPeriodo(dataInicial, dataFinal);
+        loadDispesas = false;
+
+        await TotaldeProdutosEmEstoque();
+
+        produtosDoMes.Clear();
+        foreach (var venda in vendas)
+        {
+            List<ProdutoVendido> produtosvendidosPorvenda = await ProdutosVendidosServices.GetProdutosVendidosAsync(venda);
+            produtosDoMes.AddRange(produtosvendidosPorvenda);
+        }
+
         CalcularProdutosDoMes();
-        loadProdutosDoMes = false;
+        await ProdutosMaisVendidos();
     }
-
-
 
     class ProdutoMaisVendido
     {
@@ -398,66 +474,11 @@
 
     public async Task ProdutosMaisVendidos()
     {
-        produtosVendido2.Clear();
-        foreach (var item in produtosDoMes)
-        {
-            ProdutoMaisVendido produtoVendido = new();
-            produtoVendido.nome = item.Nome;
-            produtoVendido.quantidade = item.Quantidade;
-
-            foreach (var x in produtosDoMes)
-            {
-                if (produtoVendido.nome != null)
-                {
-                    if (x.Nome == produtoVendido.nome)
-                    {
-                        produtoVendido.quantidade += x.Quantidade;
-                    }
-
-                }
-            }
-            if (!produtosVendido2.Any(x => x.nome == produtoVendido.nome))
-            {
-                produtosVendido2.Add(produtoVendido);
-            }
-            produtoVendido = new();
-        } 
-    }
-
-    public async Task ProdutosMaisVendidos2()
-    {
-        quantidades.Clear();
-        nomes.Clear();
-        ProdutoMaisVendido produtoVendido = new();
-        List<ProdutoMaisVendido> produtosVendido3 = new List<ProdutoMaisVendido>();
-
-        while (produtosVendido2.Count > 0)
-        {
-            if (produtosVendido3.Count == 5) break;
-            produtoVendido = produtosVendido2[0];
-            foreach (var item in produtosVendido2)
-            {
-                if (item.quantidade > produtoVendido.quantidade)
-                {
-                    produtoVendido = item;
-                }
-            }
-            produtosVendido3.Add(produtoVendido);
-            produtosVendido2.Remove(produtoVendido);
-        }
-
-        foreach (var x in produtosVendido3)
-        {
-            if (x.quantidade != null)
-            {
-                quantidades.Add((double)x.quantidade);
-                nomes.Add(x.nome);
-            }
-
-        }
-        produtosMaisVendidos = quantidades.ToArray();
-        produtosMaisVendidosNomes = nomes.ToArray();
-        StateHasChanged();
+        var primeirosCinco = produtosDoMes.Take(5).ToList();
+        produtosMaisVendidos = new double[produtosDoMes.Count];
+        produtosMaisVendidosNomes = new string[produtosDoMes.Count];
+        produtosMaisVendidos = primeirosCinco.Select(x => (double)x.Quantidade).ToArray();
+        produtosMaisVendidosNomes = primeirosCinco.Select(x => x.Nome).ToArray();
     }
 
     public async Task TotaldeProdutosEmEstoque()
@@ -476,12 +497,16 @@
     public async Task CalcularPerdas()
     {
         List<LogPrecoProduto> logs = await ProdutoServices.GetAllLogsPorPeriodo(dataInicial, dataFinal);
+        logs = logs.Where(x => x.Tag == "perda").ToList();
         foreach (var item in logs)
         {
             Produto produtoTeste = produtos.FirstOrDefault(x => x.Id == item.IdProduto);
-            if (item.Tag == "perda") perdaTotal += produtoTeste.ValorDeCusto * item.Quantidade;
+            perdaTotal += produtoTeste.ValorDeCusto * item.Quantidade;
         }
+        loadPerdas = false;
     }
+
+
     public void CalcularProdutosDoMes()
     {
         List<ProdutoVendido> doMesCopia = new List<ProdutoVendido>();
@@ -500,6 +525,7 @@
         }
         produtosDoMes = doMesCopia.OrderBy(x => x.Quantidade).ToList();
         produtosDoMes.Reverse();
+        loadProdutosDoMes = false;
     }
     
 }
