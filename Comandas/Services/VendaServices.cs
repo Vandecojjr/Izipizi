@@ -5,6 +5,7 @@ using FastReport.Export.PdfSimple;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
 using System;
+using static MudBlazor.CategoryTypes;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Comandas.Services
@@ -30,72 +31,85 @@ namespace Comandas.Services
             _webHostEnvironment = webHostEnvironment;
         }
 
-        public async Task AddVendaAsync(Venda venda, List<ProdutoVendido> produtosVendidos, List<FormaDePagamento> formasDePagamento)
+        public async Task<bool> AddVendaAsync(Venda venda, List<ProdutoVendido> produtosVendidos, List<FormaDePagamento> formasDePagamento, Cliente cliente)
         {
-            var userId = await _user.GetCurrentUserIdAsync();
-            var userCurrent = await _context.Users.FirstOrDefaultAsync(x => x.Id == userId);
-            if (userCurrent.nivelAdmin == 2) userId = userCurrent.IdDoProprietario;
-            var userNome = userCurrent.Email;
-
-            Cliente cliente = null;
-            if (venda.IdCliente != null)
+            try
             {
-                 cliente = await _clienteServices.GetCliente((Guid)venda.IdCliente);
-            }
-            decimal? Conferetroco = formasDePagamento.Sum(x => x.Valor != null? x.Valor : 0);
-            decimal? ajustaLimite = formasDePagamento.Where(x => x.NomeDoMetodo == "A prazo").Sum(x => x.Valor != null ? x.Valor : 0);
-            var maiorVendaNumero = await _context.Vendas.Where(x => x.IdUsuario == userId).MaxAsync(x => x.Numero);
-            venda.Numero = maiorVendaNumero == 0 ? 1 : maiorVendaNumero + 1;
-            venda.IdUsuario = userId;
-            venda.NomeDoUsuario = userNome;
-            venda.DataDaVenda = DateTime.Now;
-            venda.Lucro = 0;
+                var userId = await _user.GetCurrentUserIdAsync();
+                var userCurrent = await _context.Users.FirstOrDefaultAsync(x => x.Id == userId);
+                if (userCurrent.nivelAdmin == 2) userId = userCurrent.IdDoProprietario;
+                var userNome = userCurrent.Email;
 
-            foreach (var item in produtosVendidos)
-            {
-                var produto = await _context.Produtos.FirstOrDefaultAsync(x => x.Id == item.IdDoProduto);
-                item.Lucro = (produto.Valor - produto.ValorDeCusto) * item.Quantidade;
+                decimal? Conferetroco = formasDePagamento.Sum(x => x.Valor != null ? x.Valor : 0);
+                decimal? ajustaLimite = formasDePagamento.Where(x => x.NomeDoMetodo == "A prazo").Sum(x => x.Valor != null ? x.Valor : 0);
+                var maiorVendaNumero = await _context.Vendas.Where(x => x.IdUsuario == userId).MaxAsync(x => x.Numero);
+                venda.Numero = maiorVendaNumero == 0 ? 1 : maiorVendaNumero + 1;
+                venda.IdUsuario = userId;
+                venda.NomeDoUsuario = userNome;
+                venda.DataDaVenda = DateTime.Now;
+                venda.NomeDoCliente = cliente == null ? null : cliente.Nome;
+                venda.IdCliente = cliente == null ? null : cliente.Id;
+                venda.Lucro = 0;
 
-                if (produto.ValorDeCusto == 0 || produto.ValorDeCusto == null) item.Lucro = 0;
-                venda.Lucro += item.Lucro;
-            }
-
-            venda.Lucro -= venda.Descontos;
-
-            if (cliente != null)
-            {
-                venda.IsPrazo = true;
-                venda.IsPago = false;
-                cliente.LimiteRestante -= ajustaLimite;
-                await _clienteServices.AtualizarCliente(cliente);
-            }
-            _context.Add(venda);
-            await _context.SaveChangesAsync();
-
-            foreach (var item in produtosVendidos)
-            {
-                await _produtoVendidoServices.AddProdutoVendidoAsync(item, venda.Numero, venda);
-            }
-
-            foreach (var item in formasDePagamento)
-            {
-                if (item.Valor != null || Math.Round(item.Valor == null ? 0 : (decimal)item.Valor, 2) != 0)
+                // calcula o lucro da venda
+                foreach (var item in produtosVendidos)
                 {
-                     await _formaDePagamentoServices.AddFormaDePAgamento(item, venda);
+                    var produto = await _context.Produtos.FirstOrDefaultAsync(x => x.Id == item.IdDoProduto);
+                    item.Lucro = (produto.Valor - produto.ValorDeCusto) * item.Quantidade;
+
+                    if (produto.ValorDeCusto == 0 || produto.ValorDeCusto == null) item.Lucro = 0;
+                    venda.Lucro += item.Lucro;
                 }
-            }
+                venda.Lucro -= venda.Descontos;
+                _context.Add(venda);
 
-            if (Conferetroco > venda.Total)
+                //adiciona os produtos vendidos
+                var retornaProdutosOK = await _produtoVendidoServices.AddProdutoVendidoAsync(null, venda.Numero, venda, produtosVendidos);
+                if (!retornaProdutosOK) { return false; }
+
+                //se a venda teve formas a prazo ele modifica o limite do cliente
+                if (venda.IsPrazo)
+                {
+                    cliente.LimiteRestante -= ajustaLimite;
+                    var resposta =  await _clienteServices.AtualizarCliente(cliente);
+                    if (!resposta){return false; }
+                }
+
+                //Adiciona formas de pagamento
+                formasDePagamento = formasDePagamento.Where(x => x.Valor != null || Math.Round(x.Valor == null ? 0 : (decimal)x.Valor, 2) != 0).ToList();
+                var retornoFomas = await _formaDePagamentoServices.AddFormaDePAgamento(null, venda, formasDePagamento);
+                if(!retornoFomas) { return false; }
+
+                //transação caso exista troco
+                if (Conferetroco > venda.Total)
+                {
+                    var metodoPadrao = await _context.MetodosDePagamento.FirstOrDefaultAsync(x => x.IdDoUsuario == userId && x.Padrao == true);
+                    Transacao transacao = new Transacao();
+                    transacao.Valor = (decimal)Conferetroco - venda.Total;
+                    transacao.Tipo = false;
+                    transacao.Nome = $"Venda N° {venda.Numero} Troco.";
+                    transacao.MetodoId = metodoPadrao.Id;
+                    var retornoTransação = await _transacaoServices.AddTransacaoAsync(transacao);
+                    if (!retornoTransação) { return false; }
+                }
+
+                try
+                {
+                    
+                    await _context.SaveChangesAsync();
+                }
+                catch (Exception)
+                {
+                    return false;
+                    throw;
+                }
+                return true;
+            }
+            catch (Exception)
             {
-                var metodoPadrao = await _context.MetodosDePagamento.FirstOrDefaultAsync(x => x.IdDoUsuario == userId && x.Padrao == true);
-                Transacao transacao = new Transacao();
-                transacao.Valor = (decimal)Conferetroco - venda.Total;
-                transacao.Tipo = false;
-                transacao.Nome = $"Venda N° {venda.Numero} Troco.";
-                transacao.MetodoId = metodoPadrao.Id;
-                await _transacaoServices.AddTransacaoAsync(transacao);
+                return false;
+                throw;
             }
-
         }
 
         public async Task<List<Venda>> GetAllVendasAsync()

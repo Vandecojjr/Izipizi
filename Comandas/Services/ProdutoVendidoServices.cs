@@ -19,31 +19,45 @@ namespace Comandas.Services
             _user = user;
         }
 
-        public async Task AddProdutoVendidoAsync(ProdutoVendido produtoVendido, int numeroDaVenda = 0, Venda venda = null)
+        public async Task<bool> AddProdutoVendidoAsync(ProdutoVendido? produtoVendido =  null, int numeroDaVenda = 0, Venda venda = null, List<ProdutoVendido>? produtos = null)
         {
-
             string userId = await _user.GetCurrentUserIdAsync();
             var userCurrent = await _context.Users.FirstOrDefaultAsync(x => x.Id == userId);
             if (userCurrent.nivelAdmin == 2) userId = userCurrent.IdDoProprietario;
-
-            var produtoAntigo = await _produtoServices.GetProdutosByIdAsync(produtoVendido.IdDoProduto);
-            var quantidade = produtoVendido.Quantidade;
-            if (produtoAntigo.IsVolume)
+            try
             {
-                var codigo = produtoAntigo.CodigoDoProdutoVolume;
-                quantidade = produtoAntigo.QuantidadeVolume * quantidade;
-                produtoAntigo = await _produtoServices.GetProdutosByIdAsync((Guid)codigo);
+                if (produtos == null) 
+                {   
+                    produtos = new();
+                    produtos.Add(produtoVendido); 
+                }
+                foreach (var item in produtos)
+                {
+                    var produtoAntigo = await _produtoServices.GetProdutosByIdAsync(item.IdDoProduto);
+                    var quantidade = item.Quantidade;
+                    if (produtoAntigo.IsVolume)
+                    {
+                        var codigo = produtoAntigo.CodigoDoProdutoVolume;
+                        quantidade = produtoAntigo.QuantidadeVolume * quantidade;
+                        produtoAntigo = await _produtoServices.GetProdutosByIdAsync((Guid)codigo);
+                    }
+                    produtoAntigo.Quantidade -= quantidade;
+                    item.NumeroDaVenda = numeroDaVenda;
+                    item.Venda = venda;
+                    item.IdDoUsuario = userId;
+                    if (item.Despesa) item.DespesaDate = DateTime.Now;
+                    await _produtoServices.UpdateProdutoAsync(produtoAntigo);
+                }
+
+                _context.AddRange(produtos);
+                await _context.SaveChangesAsync();
+                return true;
             }
-            produtoAntigo.Quantidade -= quantidade;
-            produtoVendido.NumeroDaVenda = numeroDaVenda;
-            produtoVendido.Venda = venda;
-            produtoVendido.IdDoUsuario = userId;
-            if(produtoVendido.Despesa) produtoVendido.DespesaDate = DateTime.Now;
-
-
-            _context.Add(produtoVendido);
-            await _context.SaveChangesAsync();
-            await _produtoServices.UpdateProdutoAsync(produtoAntigo);
+            catch (Exception)
+            {
+                return false;
+                throw;
+            }
         }
 
         public async Task<List<ProdutoVendido>> GetProdutosVendidosAsync(Venda venda)

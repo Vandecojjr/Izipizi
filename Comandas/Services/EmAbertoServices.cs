@@ -36,7 +36,7 @@ namespace Comandas.Services
             await _context.SaveChangesAsync();
         }
 
-        public async Task AddHistorico(decimal valor, string userId, bool entradaOrNot, Guid IdEmAberto)
+        public async Task<bool> AddHistorico(decimal valor, string userId, bool entradaOrNot, Guid IdEmAberto)
         {
             try
             {
@@ -48,15 +48,16 @@ namespace Comandas.Services
                 historicoNovo.Valor = valor;
                 _context.Add(historicoNovo);
                 await _context.SaveChangesAsync();
+                return true;
             }
             catch (Exception)
             {
-
+                return false;
                 throw;
             }
         }
 
-        public async Task AddProdutoEmAberto(List<ProdutoVendido> produtos, int comanda, string vendedor)
+        public async Task<bool> AddProdutoEmAberto(List<ProdutoVendido> produtos, EmAberto comanda, string vendedor)
         {
             await _semaphore.WaitAsync();
             try
@@ -69,22 +70,21 @@ namespace Comandas.Services
 
 
                     decimal? total = produtos.Sum(x => x.valor * x.Quantidade);
-                    EmAberto vendaEmAberto = await _context.VendasEmAberto.FirstOrDefaultAsync(x => x.Numero == comanda && x.IdDoUsuario == userId);
-                    if(vendaEmAberto != null) 
+                    if(comanda != null) 
                     {
-                        bool prosseguir = true;
-                        if(total == null) prosseguir = false;
-                        vendaEmAberto.Total += total == null ? 0 : (decimal)total;
+                        if(total == null) return false;
+                        comanda.Total += total == null ? 0 : (decimal)total;
                         try
                         {
-                            _context.Entry(vendaEmAberto).State = EntityState.Modified;
+                            _context.Entry(comanda).State = EntityState.Modified;
                         }
                         catch (Exception)
                         {
-                            prosseguir = false;
+                            return false;
                             throw;
                         }
-                        if (prosseguir)
+
+                        try
                         {
                             foreach (var item in produtos)
                             {
@@ -97,7 +97,7 @@ namespace Comandas.Services
                                 else produto.Vendedor = vendedor;
                                 produto.IdDoProduto = item.IdDoProduto;
                                 produto.NomeProduto = item.Nome;
-                                produto.NumeroComanda = comanda;
+                                produto.NumeroComanda = comanda.Numero;
                                 produto.Quantidade = item.Quantidade == null ? 0 : (int)item.Quantidade;
                                 produto.IdDoUsuario = userId;
                                 produto.DataDaVenda = DateTime.Now;
@@ -106,18 +106,25 @@ namespace Comandas.Services
                                 _context.Add(produto);
                                 await _produtoServices.UpdateProdutoAsync(ajustarEstoque, true);
                             }
-                        
-                        
-                            await _context.SaveChangesAsync();
-                            await AddHistorico(total == null ? 0 : (decimal)total, userId, true, vendaEmAberto.Id);
                         }
+                        catch (Exception)
+                        {
+                            return false;
+                            throw;
+                        }
+
+                        var retornoHistorico = await AddHistorico(total == null ? 0 : (decimal)total, userId, true, comanda.Id);
+                        if (!retornoHistorico) { return false; }
+                        await _context.SaveChangesAsync();
+                        
                     }
                         transactionScope.Complete(); // Marca a transação como concluída
                 }
+                return true;
             }
             catch (Exception)
             {
-
+                return false;
                 throw;
             }
             finally

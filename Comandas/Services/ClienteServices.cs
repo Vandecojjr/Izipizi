@@ -64,10 +64,9 @@ namespace Comandas.Services
             }
         }
 
-        public async Task AtualizarCliente(Cliente cliente)
+        public async Task<bool> AtualizarCliente(Cliente cliente)
         {
-            
-
+           
             if (cliente.Limite == null || cliente.Limite == 0)
             {
                 cliente.Limite = 0;
@@ -78,8 +77,18 @@ namespace Comandas.Services
                 cliente.LimiteRestante = cliente.Limite - (cliente.LimiteAntigo - cliente.LimiteRestante) ;
             }
             cliente.LimiteAntigo = cliente.Limite;
-            _context.Entry(cliente).State = EntityState.Modified;
-            await _context.SaveChangesAsync();
+
+            try
+            {
+                _context.Entry(cliente).State = EntityState.Modified;
+                await _context.SaveChangesAsync();
+                return true;
+            }
+            catch (Exception)
+            {
+                return false;
+                throw;
+            }
         }
 
         public async Task DeleteCliente(Cliente cliente)

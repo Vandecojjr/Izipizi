@@ -8,23 +8,16 @@
 <AuthorizeView>
     <Authorized>
         <div class="page mud-layout">
-
-                <div class="top-row mud-drawer-head d-flex justify-content-center ps-4" style="background:#065A82;">
-                    <MudImage Src="BRANCA.png" Width="100"></MudImage>
-                <h8 style="color:white;" class="ml-4 pt-2">Suporte</h8>
-                </div>
             <main>
-                <div class="top-row px-4" style="background:#065A82;">
+                <div class="top-row px-4 w-100" style="background:#065A82;">
+                    <MudImage Src="BRANCA.png" Width="100"></MudImage>
+                    <h8 style="color:white;" class="ml-4 pt-2">Suporte</h8>
+                    <MudSpacer/>
                     <MudChip Icon="@Icons.Material.Filled.Person" Color="Color.Dark">@context.User.Identity?.Name</MudChip>
-                        <form action="Account/Logout" method="post">
-                            <AntiforgeryToken />
-                            <input type="hidden" name="ReturnUrl" value="@currentUrl" />
-                            <MudIconButton ButtonType="ButtonType.Submit" Icon="@Icons.Material.Filled.ExitToApp" Style="color:white;" />
-                        </form>
-                    </div>
+                </div>
                     <MudContainer MaxWidth="MaxWidth.ExtraExtraLarge" Style="background:#ECEFF1;" Class="py-2">
                         @Body
-                </MudContainer>
+                    </MudContainer>
             </main>
         </div>
 

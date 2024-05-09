@@ -8,7 +8,7 @@ namespace Comandas.Services
         Task DeleteCliente(Cliente cliente);
         Task<List<Cliente>> ObterTodos();
         Task<Cliente> GetCliente(Guid Id);
-        Task AtualizarCliente(Cliente cliente);
+        Task<bool> AtualizarCliente(Cliente cliente);
         Task AtualizaPrazoCliente(decimal total, Guid id);
         Task<byte[]> GerarRelatorioCliente(List<Venda> vendas, decimal faltaReceber);
     }

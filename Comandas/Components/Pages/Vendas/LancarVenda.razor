@@ -75,11 +75,11 @@ else if (bloqueioModal)
                     </div>
                     <div class="modal-body">
                         <div>
-                          @if (emAbertoParametro == 0)
+                          @if (emAbertoParametro == null)
                             {
                                 <label>Comanda</label>
-                                <InputSelect class="form-control" @bind-Value="numeroDaContaEmAberto">
-                                    <option value="0">Selecione uma comanda</option>
+                                <InputSelect class="form-control" @bind-Value="numeroDaContaEmAberto.Numero">
+                                    <option>Selecione uma comanda</option>
                                     @foreach (var item in ContasEmAberto)
                                     {
                                         <option value="@item.Numero">@item.Numero  -  (@item.Nome)</option>
@@ -88,7 +88,7 @@ else if (bloqueioModal)
                             }
                             else
                             {
-                                <h4>Comanda N° @emAbertoParametro</h4>
+                                <h4>Comanda N° @emAbertoParametro.Numero</h4>
                             }
                         </div>
                         <div>
@@ -387,7 +387,7 @@ else if (bloqueioModal)
 
     <MudPaper Class="p-3 mb-3">
             <div class="d-flex justify-content-end">
-                @if (emAbertoParametro == 0)
+                @if (emAbertoParametro == null)
                 {
                     <MudSwitch Label="Despesa" Color="Color.Success" @bind-Value="despesa"></MudSwitch>
                     <MudSpacer/>
@@ -465,7 +465,7 @@ else if (bloqueioModal)
         </MudItem>
         <MudItem xs="12">
             <MudPaper Class="d-flex align-center justify-center mud-width-full ">
-                @if (emAbertoParametro == 0)
+                @if (emAbertoParametro == null)
                 {
                     @if (despesa)
                     {
@@ -586,7 +586,7 @@ window.scrollToSelectedOption = function (selectedIndex) {
 
     public bool despesa { get; set; }
 
-    [Parameter] public int emAbertoParametro { get; set; } = 0;
+    [Parameter] public EmAberto emAbertoParametro { get; set; } = null;
 
 
     string? selectedCustomerName;
@@ -713,7 +713,7 @@ window.scrollToSelectedOption = function (selectedIndex) {
     private bool mostrarErroCadastroDeCliente = false;
     private string erroCadastroDeCliente { get; set; }
     private int quantidadeDePessoas = 1;
-    private int numeroDaContaEmAberto { get; set; }
+    private EmAberto numeroDaContaEmAberto = new();
     ModalDeConfirmacao modalConfirma = new();
     bool Disabled { get; set; }
     Guid clienteId { get; set; }
@@ -951,31 +951,23 @@ window.scrollToSelectedOption = function (selectedIndex) {
             carregandoVenda = true;
             caixaAtual = await CaixaServices.GetCaixaAberto();
             Cliente cliente = await ClienteServices.GetCliente((Guid)clienteId);
-            bool metodoDePagamentoNulo = false;
-            bool aprazo = false;
-            decimal totalPrazo = 0;
-
-            foreach (var item in formasDePagamento)
+            formasDePagamento.ForEach(item =>
             {
-                var valor = Math.Round(item.Valor == null ? 0 : (decimal)item.Valor, 2);
-                if (item.MetodoDePagamentoId == Guid.Empty) metodoDePagamentoNulo = true;
-                else
-                {
-                    var metodoConfere = await MetodoDePagamentoServices.GetMetodoDePagamentoAsync(item.MetodoDePagamentoId);
-                    if (metodoConfere.Nome == "A prazo" && valor > 0)
-                    {
-                        aprazo = true;
-                        totalPrazo += item.Valor == null ? 0 : (decimal)item.Valor;
-                    }
-                }
-            }
+                var metodo = metodosDePagamento.First(x => x.Nome == item.NomeDoMetodo || x.Id == item.MetodoDePagamentoId);
+                item.NomeDoMetodo ??= metodo.Nome;
+                item.MetodoDePagamentoId = metodo.Id;
+            });
+
+            bool metodoDePagamentoNulo = formasDePagamento.Any();
+            var aprazo = formasDePagamento.Any(x => x.NomeDoMetodo == "A prazo" && x.Valor != null);
+
             if (faltaPagar > 0)
             {
                 openCloseModalMensagem();
                 textoModalMensagem = $"Ainda faltam R${faltaPagar} do valor TOTAL para concluir.";
                 carregandoVenda = false;
             }
-            else if (metodoDePagamentoNulo)
+            else if (!metodoDePagamentoNulo)
             {
                 openCloseModalMensagem();
                 textoModalMensagem = "Todas as formas de pagamento devem ser selecionadas.";
@@ -994,6 +986,15 @@ window.scrollToSelectedOption = function (selectedIndex) {
             }
             else
             {
+                List<ProdutoVendido> listaDeProdutos = new List<ProdutoVendido>(produtosLancados);
+                List<FormaDePagamento> listaDeFormasDePagamentos = new List<FormaDePagamento>(formasDePagamento);
+                Venda vendaModal = new();
+                vendaModal.Total = total;
+                vendaModal.Descontos = descontoTotal;
+                vendaModal.Caixa = caixaAtual;
+                vendaModal.Id = Guid.NewGuid();
+
+                bool vendaConfirmada = true;
                 if (aprazo)
                 {
                     if (cliente == null)
@@ -1001,9 +1002,8 @@ window.scrollToSelectedOption = function (selectedIndex) {
                         openCloseModalMensagem();
                         textoModalMensagem = "Para vender A prazo tem que selecinar um cliente.";
                         carregandoVenda = false;
-
                     }
-                    else if (totalPrazo > cliente.LimiteRestante)
+                    else if (formasDePagamento.Where(x => x.NomeDoMetodo == "A prazo").Sum(x => x.Valor) > cliente.LimiteRestante)
                     {
                         openCloseModalMensagem();
                         textoModalMensagem = "O limite do cliente ja foi excedido";
@@ -1011,39 +1011,26 @@ window.scrollToSelectedOption = function (selectedIndex) {
                     }
                     else
                     {
+                        vendaModal.IsPrazo = true;
+                        vendaModal.IsPago = false;
+                    }
+                }
+                if (carregandoVenda)
+                {
+                    vendaConfirmada = await VendaServices.AddVendaAsync(vendaModal, listaDeProdutos, listaDeFormasDePagamentos, cliente);
 
-                        List<ProdutoVendido> listaDeProdutos = new List<ProdutoVendido>(produtosLancados);
-                        List<FormaDePagamento> listaDeFormasDePagamentos = new List<FormaDePagamento>(formasDePagamento);
-                        Venda vendaModal = new();
-                        vendaModal.Total = total;
-                        vendaModal.Descontos = descontoTotal;
-                        vendaModal.Caixa = caixaAtual;
-                        vendaModal.IdCliente = cliente.Id;
-                        vendaModal.NomeDoCliente = cliente.Nome;
-                        await VendaServices.AddVendaAsync(vendaModal, listaDeProdutos, listaDeFormasDePagamentos);
+                    if (vendaConfirmada)
+                    {
                         Atualiza();
                         abrirModalVenda = false;
                         carregandoVenda = false;
                         toastService.ShowSuccess("Venda realizada com SUCESSO!");
-
                     }
-
-                }
-                else
-                {
-                    List<ProdutoVendido> listaDeProdutos = new List<ProdutoVendido>(produtosLancados);
-                    List<FormaDePagamento> listaDeFormasDePagamentos = new List<FormaDePagamento>(formasDePagamento);
-                    Venda vendaModal = new();
-                    vendaModal.Total = total;
-                    vendaModal.Descontos = descontoTotal;
-                    vendaModal.Caixa = caixaAtual;
-                    if (cliente != null) { vendaModal.NomeDoCliente = cliente.Nome; }
-                    await VendaServices.AddVendaAsync(vendaModal, listaDeProdutos, listaDeFormasDePagamentos);
-                    Atualiza();
-                    abrirModalVenda = false;
-                    carregandoVenda = false;
-                    toastService.ShowSuccess("Venda realizada com SUCESSO!");
-
+                    else
+                    {
+                        openCloseModalMensagem();
+                        textoModalMensagem = "Devido a um erro interno não foi possivel salvar esta venda. Tente novamente.";
+                    }
                 }
 
             }
@@ -1359,13 +1346,17 @@ window.scrollToSelectedOption = function (selectedIndex) {
     {
         carregandoVenda = true;
 
-        if (emAbertoParametro == 0)
+        if (emAbertoParametro == null)
         {
+            numeroDaContaEmAberto = ContasEmAberto.First(x => x.Numero == numeroDaContaEmAberto.Numero);
             await EmabertoServices.AddProdutoEmAberto(produtosLancados, numeroDaContaEmAberto, vendedor);
+            numeroDaContaEmAberto = new();
+            carregandoVenda = false;
         }
         else
         {
             await EmabertoServices.AddProdutoEmAberto(produtosLancados, emAbertoParametro, vendedor);
+            carregandoVenda = false;
         }
         AbrirFecharModalDeixarEmAberto();
         Atualiza();

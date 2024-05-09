@@ -4,7 +4,7 @@ namespace Comandas.Services
 {
     public interface IVendaServices
     {
-        Task AddVendaAsync(Venda venda, List<ProdutoVendido> produtosVendidos, List<FormaDePagamento> formasDePagamento);
+        Task<bool> AddVendaAsync(Venda venda, List<ProdutoVendido> produtosVendidos, List<FormaDePagamento> formasDePagamento, Cliente? cliente = null);
         Task DeleteVendaAsync(Guid id, Guid IdDometodo);
         Task<List<Venda>> GetAllVendasAsync();
         Task<List<Venda>> ObterVendasPorDataAsync(DateTime? inicial, DateTime? final);

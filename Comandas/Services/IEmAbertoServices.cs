@@ -6,12 +6,12 @@ namespace Comandas.Services
     {
         Task<List<EmAberto>> GetAllEmAberto();
         Task AddEmAberto(EmAberto emAberto);
-        Task AddProdutoEmAberto(List<ProdutoVendido> produtos, int comanda, string vendedor);
+        Task<bool> AddProdutoEmAberto(List<ProdutoVendido> produtos, EmAberto comanda, string vendedor);
         Task RemoveProdutoEmAberto(List<ProdutosEmAberto> produtos, int comanda);
         Task<List<ProdutosEmAberto>> GetAllProdutosEmAberto(int numero);
         Task DeletarEmAberto(int numero);
         Task EditarComanda(int numero, decimal valor);
-        Task AddHistorico(decimal valor, string userId, bool entradaOrNot, Guid IdEmAberto);
+        Task<bool> AddHistorico(decimal valor, string userId, bool entradaOrNot, Guid IdEmAberto);
         Task<List<HistoricoEmAberto>> GetHistorico(Guid idComanda);
     }
 }

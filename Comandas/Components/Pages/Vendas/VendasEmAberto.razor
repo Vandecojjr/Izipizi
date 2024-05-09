@@ -274,7 +274,7 @@
         <div class="modal-dialog modal-xl modal-dialog-centered" role="document">
             <div class="modal-content">
                 <div class="container">
-                <LancarVenda emAbertoParametro="emAbertoNumero"></LancarVenda>
+                <LancarVenda emAbertoParametro="abertoParametro"></LancarVenda>
                 </div>
             <div class="modal-footer">
                
@@ -312,7 +312,7 @@
                             <div class="d-flex">
                                 <MudText Typo="Typo.h6" Style="color:white;">@item.Numero</MudText>
                                 <MudSpacer />
-                                    <MudIconButton OnClick="() => ModalLancarVendaEmAberto(item.Numero)" Icon="@Icons.Material.Filled.Add" Style="color:white;"></MudIconButton>
+                                    <MudIconButton OnClick="() => ModalLancarVendaEmAberto(item.Numero, item)" Icon="@Icons.Material.Filled.Add" Style="color:white;"></MudIconButton>
                                     <MudIconButton OnClick="() => AbrirModalDeVenda(item.Total, item.Numero)" Icon="@Icons.Material.Filled.CurrencyBitcoin" Style="color:white;"></MudIconButton>
                                     <MudIconButton OnClick="() => AbrirModalConfirmacaoDelete(item.Numero)" Icon="@Icons.Material.Filled.DeleteOutline" Style="color:white;"></MudIconButton>
                                     <MudIconButton OnClick="() => AbrirModalFecharVerProdutos(item.Numero, item.Total)" Icon="@Icons.Material.Filled.RemoveRedEye" Style="color:white;"></MudIconButton>
@@ -363,6 +363,7 @@
 
     public bool lancarVenda {get;set; }
     public int emAbertoNumero { get; set; }
+    public EmAberto abertoParametro;
 
     public int numeroComanda { get; set; }
     public decimal totalComanda { get; set; }
@@ -392,10 +393,11 @@
     public int numeroDaComanda = 0;
     Configuracao config = new();
 
-    public void ModalLancarVendaEmAberto(int numero = 0)
+    public void ModalLancarVendaEmAberto(int numero = 0, EmAberto? paramentro = null)
     {
         lancarVenda = !lancarVenda;
         emAbertoNumero = numero;
+        abertoParametro = paramentro;
     }
 
     protected override async Task OnInitializedAsync()

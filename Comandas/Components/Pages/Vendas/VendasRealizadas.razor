@@ -207,6 +207,7 @@ else
         metodos = await MetodosServices.GetAllMetodosAsync();
         metodos = metodos.Where(x => x.Nome != "Aprazo").ToList();
         vendas = await Vendaservises.ObterVendasPorDataAsync(dataInicial, dataFinal);
+        vendas = vendas.OrderBy(x => x.Numero).ToList();
         vendas.Reverse();
         var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
         var user = authState.User;
@@ -231,6 +232,7 @@ else
         {
             await Vendaservises.DeleteVendaAsync((Guid)vendaId,(Guid)metodoId);
             vendas = await Vendaservises.ObterVendasPorDataAsync(dataInicial, dataFinal);
+            vendas = vendas.OrderBy(x => x.Numero).ToList();
             vendas.Reverse();
             modalDeConfirmacaoAberto = !modalDeConfirmacaoAberto;
             StateHasChanged();
@@ -259,6 +261,7 @@ else
         var inicial = dataInicial;
         var final = dataFinal;
         vendas = await Vendaservises.ObterVendasPorDataAsync(inicial, final);
+        vendas = vendas.OrderBy(x => x.Numero).ToList();
         vendas.Reverse();
     }
 

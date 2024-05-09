@@ -1,5 +1,6 @@
 ﻿@page "/suporte"
 @page "/suporte/{userEmail}"
+@attribute [Authorize]
 
 @rendermode InteractiveServer
 @inject AuthenticationStateProvider AuthenticationStateProvider
@@ -7,7 +8,38 @@
 @inject IJSRuntime JSRuntime
 @inject NavigationManager NavigationManager
 
-<h3>Suporte</h3>
+
+<div class=" d-flex container-fluid">
+    <MudPaper Width="250px" Elevation="0" Class="py-3">
+        <MudNavMenu Bordered="true">
+            <MudNavLink OnClick="() => apresentacao = !apresentacao">Apresentação</MudNavLink>
+            <MudNavLink Match="NavLinkMatch.Prefix" Href="/components/navmenu">Servers</MudNavLink>
+            <MudNavLink Href="/billing">Billing</MudNavLink>
+            <MudNavGroup Title="Settings" Expanded="true">
+                <MudNavLink Href="/users">Users</MudNavLink>
+                <MudNavLink Href="/security">Security</MudNavLink>
+            </MudNavGroup>
+            <MudNavLink Href="/about">About</MudNavLink>
+        </MudNavMenu>
+    </MudPaper>
+    <div class="w-100">
+        @if (apresentacao)
+        {
+            <div class="d-flex justify-content-center">
+                <h3>Introdulção ao suporte</h3>
+            </div>
+            <div class="p-lg-5">
+                <div style="padding:56.25% 0 0 0;position:relative;"><iframe src="https://player.vimeo.com/video/943859313?h=cfdb6f108f&amp;badge=0&amp;autopause=0&amp;player_id=0&amp;app_id=58479" frameborder="0" allow="autoplay; fullscreen; picture-in-picture; clipboard-write" style="position:absolute;top:0;left:0;width:100%;height:100%;" title="desconto"></iframe></div><script src="https://player.vimeo.com/api/player.js"></script>
+            </div>
+        }
+        <div id="teste" class="d-flex justify-content-center">
+            <h3>teste</h3>
+        </div>
+        <div class="p-lg-5">
+            <div style="padding:56.25% 0 0 0;position:relative;"><iframe src="https://player.vimeo.com/video/943859313?h=cfdb6f108f&amp;badge=0&amp;autopause=0&amp;player_id=0&amp;app_id=58479" frameborder="0" allow="autoplay; fullscreen; picture-in-picture; clipboard-write" style="position:absolute;top:0;left:0;width:100%;height:100%;" title="desconto"></iframe></div><script src="https://player.vimeo.com/api/player.js"></script>
+        </div>
+    </div>
+</div>
 
 @if (recarregar)
 {
@@ -51,6 +83,7 @@
     [Parameter]
     public string userEmail { get; set; }
     public bool recarregar { get; set; }
+    bool apresentacao = true;
 
     protected override async Task OnInitializedAsync()
     {
@@ -64,6 +97,7 @@
                 userEmail = user.Identity.Name;
             }
             var urlEmail = $"/suporte/{userEmail}";
+            
             NavigationManager.NavigateTo(urlEmail);
         }
         else

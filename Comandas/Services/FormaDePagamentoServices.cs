@@ -18,22 +18,40 @@ namespace Comandas.Services
             _transacaoServices = transacaoServices;
         }
 
-        public async Task AddFormaDePAgamento(FormaDePagamento formaDePagamento, Venda venda)
+        public async Task<bool> AddFormaDePAgamento(FormaDePagamento? formaDePagamento = null, Venda? venda = null, List<FormaDePagamento>? formas = null)
         {
-            var metodo = await _metodoDePagamentoServices.GetMetodoDePagamentoAsync(formaDePagamento.MetodoDePagamentoId);
-            formaDePagamento.NomeDoMetodo = metodo.Nome;
-            formaDePagamento.Venda = venda;
+            try
+            {
 
-            _context.Add(formaDePagamento);
-            await _context.SaveChangesAsync();
+                if (formas == null)
+                {
+                    formas = new();
+                    formas.Add(formaDePagamento);
+                }
+                foreach (var item in formas)
+                {
+                    var metodo = await _metodoDePagamentoServices.GetMetodoDePagamentoAsync(item.MetodoDePagamentoId);
+                    item.NomeDoMetodo = metodo.Nome;
+                    item.Venda = venda;
 
-            Transacao transacao = new();
-            transacao.Nome = $"Venda N° {venda.Numero}";
-            transacao.MetodoId = metodo.Id;
-            transacao.Valor = formaDePagamento.Valor == null ? 0 : (decimal)formaDePagamento.Valor;
-            transacao.Tipo = true;
+                    Transacao transacao = new();
+                    transacao.Nome = $"Venda N° {venda.Numero}";
+                    transacao.MetodoId = metodo.Id;
+                    transacao.Valor = item.Valor == null ? 0 : (decimal)item.Valor;
+                    transacao.Tipo = true;
 
-            await _transacaoServices.AddTransacaoAsync(transacao);
+                    await _transacaoServices.AddTransacaoAsync(transacao);
+                }
+
+                _context.AddRange(formas);
+                await _context.SaveChangesAsync();
+                return true;
+            }
+            catch (Exception)
+            {
+                return false;
+                throw;
+            }
         }
 
         public async Task<List<FormaDePagamento>> GetFormaDePagamentos(Venda venda)

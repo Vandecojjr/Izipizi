@@ -17,29 +17,39 @@ namespace Comandas.Services
             _metodoDePagamentoServices = metodoDePagamentoServices;
         }
 
-        public async Task AddTransacaoAsync(Transacao transacao)
+        public async Task<bool> AddTransacaoAsync(Transacao transacao)
         {
-            var userId = await _user.GetCurrentUserIdAsync();
-            var userCurrent = await _context.Users.FirstOrDefaultAsync(x => x.Id == userId);
-            if (userCurrent.nivelAdmin == 2) userId = userCurrent.IdDoProprietario;
-            var userNome = await _user.GetCurrentUserNameAsync();
-            var metodoNome = (await _metodoDePagamentoServices.GetMetodoDePagamentoAsync(transacao.MetodoId)).Nome;
-            Caixa caixaAtual = await GetCaixaAberto();
-
-            if (caixaAtual != null)
+            try
             {
-                transacao.UserId = userId;
-                transacao.UserNome = userNome;
-                transacao.Data = DateTime.Now;
-                transacao.Caixa = caixaAtual;
-                transacao.MetodoNome = metodoNome;
+                var userId = await _user.GetCurrentUserIdAsync();
+                var userCurrent = await _context.Users.FirstOrDefaultAsync(x => x.Id == userId);
+                if (userCurrent.nivelAdmin == 2) userId = userCurrent.IdDoProprietario;
+                var userNome = await _user.GetCurrentUserNameAsync();
+                var metodoNome = (await _metodoDePagamentoServices.GetMetodoDePagamentoAsync(transacao.MetodoId)).Nome;
+                Caixa caixaAtual = await GetCaixaAberto();
 
-                _context.Add(transacao);
-                await _context.SaveChangesAsync();
+                if (caixaAtual != null)
+                {
+                    transacao.UserId = userId;
+                    transacao.UserNome = userNome;
+                    transacao.Data = DateTime.Now;
+                    transacao.Caixa = caixaAtual;
+                    transacao.MetodoNome = metodoNome;
+
+                    _context.Add(transacao);
+                    await _context.SaveChangesAsync();
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
             }
-
-            
-
+            catch (Exception)
+            {
+                return false;
+                throw;
+            }
         }
 
         public async Task<List<Transacao>> GetAllTrasacoesAsync(Caixa caixa)
