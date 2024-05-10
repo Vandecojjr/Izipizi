@@ -73,17 +73,6 @@ namespace Comandas.Services
                     if(comanda != null) 
                     {
                         if(total == null) return false;
-                        comanda.Total += total == null ? 0 : (decimal)total;
-                        try
-                        {
-                            _context.Entry(comanda).State = EntityState.Modified;
-                        }
-                        catch (Exception)
-                        {
-                            return false;
-                            throw;
-                        }
-
                         try
                         {
                             foreach (var item in produtos)
@@ -115,7 +104,6 @@ namespace Comandas.Services
 
                         var retornoHistorico = await AddHistorico(total == null ? 0 : (decimal)total, userId, true, comanda.Id);
                         if (!retornoHistorico) { return false; }
-                        await _context.SaveChangesAsync();
                         
                     }
                         transactionScope.Complete(); // Marca a transação como concluída
@@ -162,16 +150,9 @@ namespace Comandas.Services
             if (userCurrent.nivelAdmin == 2) userId = userCurrent.IdDoProprietario;
 
             var venda = await _context.VendasEmAberto.FirstOrDefaultAsync(x => x.Numero == numero && x.IdDoUsuario == userId);
-            if(venda != null)
-            {
-                venda.Total -= valor;
-                if(Math.Round(venda.Total, 2) <= 0) { await DeletarEmAberto(numero); }
-                else
-                {
-                    _context.Entry(venda).State = EntityState.Modified;
-                    await _context.SaveChangesAsync();
-                }
-            }
+            var historicos = await GetHistorico(venda.Id);
+            var total = (historicos.Where(x => x.IsEntrada).Sum(x => x.Valor) - historicos.Where(x => !x.IsEntrada).Sum(x => x.Valor) - valor);
+            if(Math.Round(total, 2) <= 0) { await DeletarEmAberto(numero); }
             await AddHistorico((decimal)valor, userId, false, venda.Id);
         }
 
@@ -207,6 +188,26 @@ namespace Comandas.Services
 
                 throw;
             }
+        }
+
+        public async Task<List<HistoricoEmAberto>> GetHistoricos()
+        {
+            try
+            {
+                string userId = await _user.GetCurrentUserIdAsync();
+                var userCurrent = await _context.Users.FirstOrDefaultAsync(x => x.Id == userId);
+                if (userCurrent.nivelAdmin == 2) userId = userCurrent.IdDoProprietario;
+
+            
+                var historicos = await _context.historicoEmAbertos.Where(x => x.UserID == userId).ToListAsync();
+                return historicos;
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
+
         }
 
         public async Task RemoveProdutoEmAberto(List<ProdutosEmAberto> produtos, int comanda)

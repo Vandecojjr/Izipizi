@@ -8,38 +8,47 @@
 @inject IJSRuntime JSRuntime
 @inject NavigationManager NavigationManager
 
-
-<div class=" d-flex container-fluid">
-    <MudPaper Width="250px" Elevation="0" Class="py-3">
-        <MudNavMenu Bordered="true">
-            <MudNavLink OnClick="() => apresentacao = !apresentacao">Apresentação</MudNavLink>
-            <MudNavLink Match="NavLinkMatch.Prefix" Href="/components/navmenu">Servers</MudNavLink>
-            <MudNavLink Href="/billing">Billing</MudNavLink>
-            <MudNavGroup Title="Settings" Expanded="true">
-                <MudNavLink Href="/users">Users</MudNavLink>
-                <MudNavLink Href="/security">Security</MudNavLink>
-            </MudNavGroup>
-            <MudNavLink Href="/about">About</MudNavLink>
-        </MudNavMenu>
-    </MudPaper>
-    <div class="w-100">
-        @if (apresentacao)
-        {
-            <div class="d-flex justify-content-center">
-                <h3>Introdulção ao suporte</h3>
-            </div>
-            <div class="p-lg-5">
-                <div style="padding:56.25% 0 0 0;position:relative;"><iframe src="https://player.vimeo.com/video/943859313?h=cfdb6f108f&amp;badge=0&amp;autopause=0&amp;player_id=0&amp;app_id=58479" frameborder="0" allow="autoplay; fullscreen; picture-in-picture; clipboard-write" style="position:absolute;top:0;left:0;width:100%;height:100%;" title="desconto"></iframe></div><script src="https://player.vimeo.com/api/player.js"></script>
-            </div>
-        }
-        <div id="teste" class="d-flex justify-content-center">
-            <h3>teste</h3>
-        </div>
-        <div class="p-lg-5">
-            <div style="padding:56.25% 0 0 0;position:relative;"><iframe src="https://player.vimeo.com/video/943859313?h=cfdb6f108f&amp;badge=0&amp;autopause=0&amp;player_id=0&amp;app_id=58479" frameborder="0" allow="autoplay; fullscreen; picture-in-picture; clipboard-write" style="position:absolute;top:0;left:0;width:100%;height:100%;" title="desconto"></iframe></div><script src="https://player.vimeo.com/api/player.js"></script>
-        </div>
+<MudAppBar Style="background:#065A82;" Fixed="true" Dense="true">
+    <div class="top-row mud-drawer-head d-flex justify-content-center">
+        <MudImage Src="BRANCA.png" Width="100"></MudImage>
+        <h8 style="color:white;" class="ml-4 pt-2">Suporte</h8>
     </div>
-</div>
+    <MudSpacer/>
+    <MudIconButton OnClick="@ToggleDrawer" Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" />
+</MudAppBar>
+
+    <MudDrawerContainer Class="mud-height-full">
+    <MudDrawer @bind-Open="@open" Elevation="0" Variant="@DrawerVariant.Responsive" Color="Color.Surface">
+            <MudNavMenu Color="Color.Inherit" Class="position-fixed pt-10">
+                <MudNavLink OnClick="() => TopicoAtual(Topicos[0])">Introdução</MudNavLink>
+            <MudNavLink OnClick="() => TopicoAtual(Topicos[1])">Dashboard</MudNavLink>
+                <MudNavLink >Vendas</MudNavLink>
+            </MudNavMenu>
+        </MudDrawer>
+        <div class=" d-flex container-fluid p-5">
+            <div class="w-100">
+                @if (Topicos[0].Estado)
+                {
+                    <div class="d-flex justify-content-center">
+                        <h3>Introdulção ao suporte</h3>
+                    </div>
+                    <div class="p-lg-5">
+                        <div style="padding:56.25% 0 0 0;position:relative;"><iframe src="https://player.vimeo.com/video/943859313?h=cfdb6f108f&amp;badge=0&amp;autopause=0&amp;player_id=0&amp;app_id=58479" frameborder="0" allow="autoplay; fullscreen; picture-in-picture; clipboard-write" style="position:absolute;top:0;left:0;width:100%;height:100%;" title="desconto"></iframe></div><script src="https://player.vimeo.com/api/player.js"></script>
+                    </div>
+                }
+                @if (Topicos[1].Estado)
+                {
+                        <div id="teste" class="d-flex justify-content-center">
+                        <h3>teste</h3>
+                    </div>
+                    <div class="p-lg-5">
+                        <div style="padding:56.25% 0 0 0;position:relative;"><iframe src="https://player.vimeo.com/video/943859313?h=cfdb6f108f&amp;badge=0&amp;autopause=0&amp;player_id=0&amp;app_id=58479" frameborder="0" allow="autoplay; fullscreen; picture-in-picture; clipboard-write" style="position:absolute;top:0;left:0;width:100%;height:100%;" title="desconto"></iframe></div><script src="https://player.vimeo.com/api/player.js"></script>
+                    </div>
+                }
+            </div>
+        </div>
+    </MudDrawerContainer>
+
 
 @if (recarregar)
 {
@@ -83,7 +92,38 @@
     [Parameter]
     public string userEmail { get; set; }
     public bool recarregar { get; set; }
-    bool apresentacao = true;
+    bool teste = true;
+
+    public List<Topic> Topicos = new List<Topic>();
+
+    public class Topic
+    {
+        public string Nome { get; set; }
+        public bool Estado { get; set; }
+
+        // Construtor para inicializar Nome e Estado
+        public Topic(string nome, bool estado)
+        {
+            Nome = nome;
+            Estado = estado;
+        }
+    }
+
+    bool open = false;
+
+    void ToggleDrawer()
+    {
+        open = !open;
+    }
+
+    public void TopicoAtual(Topic top)
+    {
+        foreach (var item in Topicos)
+        {
+            item.Estado = false;
+        }
+        top.Estado = true;
+    }
 
     protected override async Task OnInitializedAsync()
     {
@@ -103,6 +143,11 @@
         else
         {
             recarregar = true;
+            Topicos = new List<Topic>()
+            {
+                new Topic("apresentacao", true),
+                new Topic("dashboard", true)
+            };
         }
     }
 }

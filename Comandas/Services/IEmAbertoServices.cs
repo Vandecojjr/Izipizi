@@ -13,5 +13,6 @@ namespace Comandas.Services
         Task EditarComanda(int numero, decimal valor);
         Task<bool> AddHistorico(decimal valor, string userId, bool entradaOrNot, Guid IdEmAberto);
         Task<List<HistoricoEmAberto>> GetHistorico(Guid idComanda);
+        Task<List<HistoricoEmAberto>> GetHistoricos();
     }
 }

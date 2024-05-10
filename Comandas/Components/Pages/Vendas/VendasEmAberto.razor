@@ -223,7 +223,7 @@
                 </MudDataGrid>
                 @if (produtosDaComandaSelecionados.Count > 0)
                 {
-                    <MudButton OnClick="() => AbrirModalDeVenda(totalComanda, numeroComanda, true)" Class="mx-3 mt-1 " Variant="Variant.Filled" Color="Color.Success">Vender</MudButton>
+                    <MudButton OnClick="() => AbrirModalDeVenda(idComanda, numeroComanda, true)" Class="mx-3 mt-1 " Variant="Variant.Filled" Color="Color.Success">Vender</MudButton>
                 }
                 <MudButton OnClick="FecharVerProdutos" Class="mx-3 my-3" Variant="Variant.Filled" Color="Color.Info">OK</MudButton>
             </div>
@@ -313,9 +313,9 @@
                                 <MudText Typo="Typo.h6" Style="color:white;">@item.Numero</MudText>
                                 <MudSpacer />
                                     <MudIconButton OnClick="() => ModalLancarVendaEmAberto(item.Numero, item)" Icon="@Icons.Material.Filled.Add" Style="color:white;"></MudIconButton>
-                                    <MudIconButton OnClick="() => AbrirModalDeVenda(item.Total, item.Numero)" Icon="@Icons.Material.Filled.CurrencyBitcoin" Style="color:white;"></MudIconButton>
+                                    <MudIconButton OnClick="() => AbrirModalDeVenda(item.Id, item.Numero)" Icon="@Icons.Material.Filled.CurrencyBitcoin" Style="color:white;"></MudIconButton>
                                     <MudIconButton OnClick="() => AbrirModalConfirmacaoDelete(item.Numero)" Icon="@Icons.Material.Filled.DeleteOutline" Style="color:white;"></MudIconButton>
-                                    <MudIconButton OnClick="() => AbrirModalFecharVerProdutos(item.Numero, item.Total)" Icon="@Icons.Material.Filled.RemoveRedEye" Style="color:white;"></MudIconButton>
+                                    <MudIconButton OnClick="() => AbrirModalFecharVerProdutos(item.Id,item.Numero)" Icon="@Icons.Material.Filled.RemoveRedEye" Style="color:white;"></MudIconButton>
                             </div>
                             <hr / style="color:white;">
                         </CardHeaderContent>
@@ -327,7 +327,7 @@
                     <MudCardActions Class="d-flex justify-content-center">
                             <MudIconButton OnClick="() => BuscarHistorico(item.Id)" Icon="@Icons.Material.Filled.Checklist" Style="color:white;"></MudIconButton>
                             <MudSpacer></MudSpacer>
-                            <MudText Typo="Typo.h6" Style="color:white;">@item.Total.ToString("C", System.Globalization.CultureInfo.CreateSpecificCulture("pt-BR"))</MudText>
+                            <MudText Typo="Typo.h6" Style="color:white;">@((Historicos.Where(x => x.IdEmAberto == item.Id && x.IsEntrada).Sum(x => x.Valor) - Historicos.Where(x => x.IdEmAberto == item.Id && !x.IsEntrada).Sum(x => x.Valor)).ToString("C", System.Globalization.CultureInfo.CreateSpecificCulture("pt-BR")))</MudText>
                     </MudCardActions>
                 </MudCard>
             </MudItem>
@@ -353,6 +353,7 @@
     public List<ProdutosEmAberto> produtosDaComandaSelecionados = new List<ProdutosEmAberto>();
     private List<ProdutoVendido> produtosLancados = new List<ProdutoVendido>();
     public List<HistoricoEmAberto> Historico = new List<HistoricoEmAberto>();
+    public List<HistoricoEmAberto> Historicos = new List<HistoricoEmAberto>();
     private Caixa caixaAtual = null;
     public EmAberto NovoEmAberto = new();
     public bool abrirModalNovoEmAberto { get; set; }
@@ -367,6 +368,7 @@
 
     public int numeroComanda { get; set; }
     public decimal totalComanda { get; set; }
+    public Guid idComanda { get; set; }
 
     bool carregandoVenda = false;
     Guid clienteId { get; set; }
@@ -393,16 +395,22 @@
     public int numeroDaComanda = 0;
     Configuracao config = new();
 
-    public void ModalLancarVendaEmAberto(int numero = 0, EmAberto? paramentro = null)
+    public async void ModalLancarVendaEmAberto(int numero = 0, EmAberto? paramentro = null)
     {
         lancarVenda = !lancarVenda;
         emAbertoNumero = numero;
         abertoParametro = paramentro;
+        if (numero == 0 && paramentro == null)
+        {
+            Historicos = await EmabertoServices.GetHistoricos();
+            StateHasChanged();
+        }
     }
 
     protected override async Task OnInitializedAsync()
     {
         EmAbertos = await EmabertoServices.GetAllEmAberto();
+        Historicos = await EmabertoServices.GetHistoricos();
         caixaAtual = await CaixaServices.GetCaixaAberto();
         user = await UsuarioServices.GetUsuario();
         clientes = await ClienteServices.ObterTodos();
@@ -425,10 +433,12 @@
         verProdutos = false;
     }
 
-    public async Task AbrirModalFecharVerProdutos(int numero, decimal total = 0)
+    public async Task AbrirModalFecharVerProdutos(Guid id,int numero)
     {
+        Historico = Historicos.Where(x => x.IdEmAberto == id).ToList();
+        idComanda = id;
         numeroComanda = numero;
-        totalComanda = total;
+        totalComanda = Historico.Where(x => x.IsEntrada).Sum(x => x.Valor) - Historico.Where(x => !x.IsEntrada).Sum(x => x.Valor);
         produtosDaComanda = await EmabertoServices.GetAllProdutosEmAberto(numero);
         produtosDaComandaSelecionados.Clear();
         AbrirVerProdutos();
@@ -544,8 +554,10 @@
                     vendaModal.Caixa = caixaAtual;
                     vendaModal.IdCliente = cliente.Id;
                     vendaModal.NomeDoCliente = cliente.Nome;
+                    vendaModal.IsPago = false;
+                    vendaModal.IsPrazo = true;
                     if (faltaPagar > 0) listaDeProdutos.Clear();
-                    await VendaServices.AddVendaAsync(vendaModal, listaDeProdutos, listaDeFormasDePagamentos);
+                    await VendaServices.AddVendaAsync(vendaModal, listaDeProdutos, listaDeFormasDePagamentos,cliente);
                     abrirModalVenda = false;
                     if (produtosDaComandaSelecionados.Count > 0) await EmabertoServices.RemoveProdutoEmAberto(produtosDaComandaSelecionados, numeroComanda);
                     if (faltaPagar > 0 || produtosDaComandaSelecionados.Count == 0) await EmabertoServices.EditarComanda(numeroComanda, (total - faltaPagar));
@@ -583,6 +595,7 @@
 
             }
             EmAbertos = await EmabertoServices.GetAllEmAberto();
+            Historicos = await EmabertoServices.GetHistoricos();
 
         }
     }
@@ -665,17 +678,20 @@
         AtualizaFaltaPagar();
     }
 
-    public void FecharModalDeVenda()
+    public async Task FecharModalDeVenda()
     {
         abrirModalVenda = false;
         total = 0;
         totalfixo = 0;
         faltaPagar = total;
         FecharVerProdutos();
+        Historicos = await EmabertoServices.GetHistoricos();
     }
 
-    public async Task AbrirModalDeVenda(decimal totalDaComanda, int numero, bool selecaoProdutos = false)
+    public async Task AbrirModalDeVenda(Guid id, int numero, bool selecaoProdutos = false)
     {
+        Historico = Historicos.Where(x => x.IdEmAberto == id).ToList();
+        var totalDaComanda = Historico.Where(x => x.IsEntrada).Sum(x => x.Valor) - Historico.Where(x => !x.IsEntrada).Sum(x => x.Valor);
         verProdutos = false;
         numeroComanda = numero;
         if (config.VendaRapida) { MetodosDePagamentoVendasRapidas(); }
@@ -689,13 +705,7 @@
         else
         {
             produtosDaComanda = produtosDaComandaSelecionados;
-            total = 0;
-            foreach (var item in produtosDaComanda)
-            {
-
-                total += (decimal)item.total;
-
-            }
+            total = produtosDaComanda.Sum(x => x.total ?? 0);
             if (total > totalComanda) total = totalComanda;
             totalfixo = total;
         }
@@ -707,10 +717,8 @@
 
     public void SelecionarProduto(HashSet<ProdutosEmAberto> items)
     {
-        foreach (var item in items)
-        {
-            produtosDaComandaSelecionados.Add(item);
-        }
+        produtosDaComandaSelecionados.Clear();
+        produtosDaComandaSelecionados.AddRange(items);
     }
 
     private async Task HandleKeyDown(KeyboardEventArgs e)
@@ -788,7 +796,7 @@
 
     public async Task BuscarHistorico(Guid Id)
     {
-        Historico = await EmabertoServices.GetHistorico(Id);
+        Historico = Historicos.Where(x => x.IdEmAberto == Id).ToList();
         verHistorico = true;
     }
 
