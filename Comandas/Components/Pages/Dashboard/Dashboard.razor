@@ -88,7 +88,7 @@
                 
         </MudItem>
         @* Total em aberto *@
-        <MudItem xs="12" sm="12" md="6" xl="3">
+@*         <MudItem xs="12" sm="12" md="6" xl="3">
                 <MudPaper Elevation="2" Class="pa-4 h-100" Style="background:#1C7293;">
                 @if (loadEmAberto)
                 {
@@ -100,10 +100,10 @@
                 {
                     <H6 class="d-flex justify-content-center text-light">Total em vendas abertas</H6>
                     <MudDivider/>
-                    <h3 class="d-flex justify-content-center text-light">@(string.Format("{0:C}", vendasEmAberto.Sum(x => x.Total)))</h3>
+                    <h3 class="d-flex justify-content-center text-light">@(string.Format("{0:C}", (vendasEmAberto.Where(x => x.IsEntrada).Sum(x => x.Valor) - vendasEmAberto.Where(x => !x.IsEntrada).Sum(x => x.Valor))))</h3>
                 }
             </MudPaper>
-        </MudItem>
+        </MudItem> *@
         @* Total em descontos *@
         <MudItem xs="12" sm="12" md="3" xl="6">
                 <MudPaper Elevation="2" Class="pa-4 h-100" Style="background:#1C7293;">
@@ -357,7 +357,6 @@
     List<decimal> vendasChar = new List<decimal>();
     List<ProdutoVendido> produtosDoMes = new List<ProdutoVendido>();
     List<MetodoDePagamento> MetodosDePagamento = new List<MetodoDePagamento>();
-    List<EmAberto> vendasEmAberto = new List<EmAberto>();
     List<FormaDePagamento> FormasDePagamento = new List<FormaDePagamento>();
     List<ProdutoMaisVendido> produtosVendido2 = new List<ProdutoMaisVendido>();
 
@@ -434,8 +433,6 @@
         loadVendas = false;
 
         //busca vendas em aberto
-        vendasEmAberto = await EmAbertoServices.GetAllEmAberto();
-        loadEmAberto = false;
 
         // busca formas de pagamento
         FormasDePagamento.Clear();

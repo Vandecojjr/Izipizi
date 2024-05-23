@@ -103,7 +103,7 @@ namespace Comandas.Services
                 Despesa despesa = new Despesa();
                 despesa.Nome = item.Nome;
                 despesa.DataDespesa = item.DespesaDate;
-                despesa.Valor = (decimal)item.valor;
+                despesa.Valor = (decimal)((decimal)item.valor * item.Quantidade);
                 despesas.Add(despesa);
             }
 
