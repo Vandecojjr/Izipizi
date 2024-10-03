@@ -8,13 +8,13 @@
 
 <AuthorizeView>
     <Authorized>
-        <div class="page mud-layout">
-
+        <div class="page mud-layout d-flex">
+             <div class="nav-scrollable" style="position: fixed; top: 0; left: 0; width: 250px; height: 100%; overflow-y: auto; background: white;" onclick="document.querySelector('.navbar-toggler').click()">
+                        <NavMenu />
+            </div>
             <main>
                 
-                    <div class="nav-scrollable" style="position: fixed; top: 0; left: 0; width: 250px; height: 100%; overflow-y: auto; background: white;" onclick="document.querySelector('.navbar-toggler').click()">
-                        <NavMenu />
-                    </div>
+                   
                 <div class="top-row px-4" style="background:#065A82;">
                     <MudChip Icon="@Icons.Material.Filled.Person" Color="Color.Dark">@context.User.Identity?.Name</MudChip>
                     <form action="Account/Logout" method="post">
@@ -26,7 +26,7 @@
                 </div>
                     <MudContainer MaxWidth="MaxWidth.ExtraExtraLarge" Style="background:#ECEFF1;" Class="py-2">
                     @Body
-                </MudContainer>
+                    </MudContainer>
             </main>
         </div>
 
