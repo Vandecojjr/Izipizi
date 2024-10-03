@@ -10,20 +10,11 @@
     <Authorized>
         <div class="page mud-layout">
 
-            <div class="sidebar mud-elevation-1" style="background:white;">
-                <div class="top-row mud-drawer-head d-flex justify-content-center" style="background:#065A82;">
-                    <MudImage Src="BRANCA.png" Width="100"></MudImage>
-                    <h8 style="color:white;" class="ml-4 pt-2">Vs 1.0.0</h8>
-                </div>
-
-                <input type="checkbox" title="Navigation menu" class="navbar-toggler" />
-                <div class="nav-scrollable" style="background:white; height: 92%" onclick="document.querySelector('.navbar-toggler').click()">
-                    <NavMenu />
-                </div>
-
-            </div>
-
             <main>
+                
+                    <div class="nav-scrollable" style="position: fixed; top: 0; left: 0; width: 250px; height: 100%; overflow-y: auto; background: white;" onclick="document.querySelector('.navbar-toggler').click()">
+                        <NavMenu />
+                    </div>
                 <div class="top-row px-4" style="background:#065A82;">
                     <MudChip Icon="@Icons.Material.Filled.Person" Color="Color.Dark">@context.User.Identity?.Name</MudChip>
                     <form action="Account/Logout" method="post">
