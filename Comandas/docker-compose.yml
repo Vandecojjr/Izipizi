@@ -1,0 +1,9 @@
+services:
+  api:
+    container_name: integracao_api
+    build:
+      dockerfile: dockerfile
+      context: .
+    ports:
+      - 8080:8080
+
