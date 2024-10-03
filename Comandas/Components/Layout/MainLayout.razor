@@ -9,12 +9,12 @@
 <AuthorizeView>
     <Authorized>
         <div class="page mud-layout">
-             
-            <main clas="d-flex">
-                
-               <div class="nav-scrollable" style="position: absolut; top: 0; left: 0; width: 250px; height: 100%; overflow-y: auto; background: white;" onclick="document.querySelector('.navbar-toggler').click()">
+             <div class="nav-scrollable" style="position: fixed; top: 0; left: 0; width: 250px; height: 100%; overflow-y: auto; background: white;" onclick="document.querySelector('.navbar-toggler').click()">
                             <NavMenu />
                 </div>
+            <main clas="d-flex">
+                
+               
                 <div>
                 <div class="top-row px-4" style="background:#065A82;">
                     <MudChip Icon="@Icons.Material.Filled.Person" Color="Color.Dark">@context.User.Identity?.Name</MudChip>
