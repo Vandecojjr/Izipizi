@@ -6,4 +6,16 @@ services:
       context: .
     ports:
       - 8080:8080
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server
+    environment:
+      SA_PASSWORD: "SqlServer2019!"
+      ACCEPT_EULA: "Y"
+    ports:
+      - "1433:1433"
+    volumes:
+      - meu-volume:/var/opt/mssql
+
+volumes:
+  meu-volume:
 
